@@ -1,0 +1,51 @@
+name: Bug report
+description: Something in Dynaweb Studio or an exported site does not work as expected.
+labels: [bug, needs review]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. **Security problems must not be reported here.** Use the private vulnerability link in the issue chooser instead.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Create a project with the Lagoon preset
+        2. Add a horizontal animation to the gallery
+        3. Switch the canvas to Mobile
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [Editor, Canvas preview, Parallax, Scroll reveal, Horizontal scroll, Exported site, Project saving or loading, Other]
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Browser and OS
+      placeholder: Chrome 131 on Windows 11
+    validations:
+      required: true
+  - type: textarea
+    id: project
+    attributes:
+      label: Project file (optional)
+      description: Attach the `.dynaweb.json` file from "Save file" if you can. Remove anything private first.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues and this is not a duplicate.
+          required: true

@@ -1,0 +1,25 @@
+name: UI/UX improvement
+description: Improve how the editor or generated sites look or feel.
+labels: [design, needs review]
+body:
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where?
+      options: [Editor interface, Design presets, Generated site layout, Typography or colour, Other]
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: Current experience
+      description: Screenshots help a lot.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed improvement
+      description: Mockups, references or a description. Keep contrast, keyboard use and reduced motion in mind.
+    validations:
+      required: true

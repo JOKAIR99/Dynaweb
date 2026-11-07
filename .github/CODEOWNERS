@@ -1,0 +1,9 @@
+# The repository owner reviews every change by default.
+* @JOKAIR99
+
+# Areas that always need the owner's sign-off.
+/.github/ @JOKAIR99
+/src/runtime/ @JOKAIR99
+/src/model/ @JOKAIR99
+/SECURITY.md @JOKAIR99
+/LICENSE @JOKAIR99

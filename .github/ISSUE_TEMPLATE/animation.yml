@@ -1,0 +1,30 @@
+name: Animation improvement
+description: Parallax, scroll reveal or horizontal scroll behaviour, new effects, or animation performance.
+labels: [animation, needs review]
+body:
+  - type: dropdown
+    id: system
+    attributes:
+      label: Animation system
+      options: [Parallax, Scroll reveal, Horizontal scroll, Animation engine (shared), New system]
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What should change?
+      description: Describe the effect or problem. Link a reference site or video if it helps.
+    validations:
+      required: true
+  - type: textarea
+    id: settings
+    attributes:
+      label: Settings involved
+      description: Which settings (speed, depth, stagger, snap...) are affected, or which new settings you propose.
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Engine rules (see docs/architecture.md)
+      options:
+        - label: The effect degrades to static, visible content with reduced motion and without JavaScript.
+        - label: The effect only animates transform, opacity, filter or clip-path.

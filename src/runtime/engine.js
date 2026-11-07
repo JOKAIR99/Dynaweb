@@ -13,7 +13,7 @@
   var MOBILE_MAX = 767;
 
   function readJson(el, attr) {
-    try { return JSON.parse(el.getAttribute(attr)); } catch (e) { return null; }
+    try { return JSON.parse(el.getAttribute(attr)); } catch (_err) { return null; } // eslint-disable-line no-unused-vars
   }
   function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
 
