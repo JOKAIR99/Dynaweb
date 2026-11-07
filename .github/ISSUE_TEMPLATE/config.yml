@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability (private)
+    url: https://github.com/JOKAIR99/Dynaweb/security/advisories/new
+    about: Never report vulnerabilities in a public issue. Use GitHub's private vulnerability reporting.
+  - name: Ask a question or share an idea
+    url: https://github.com/JOKAIR99/Dynaweb/discussions
+    about: Questions, show-and-tell and early ideas belong in Discussions.
