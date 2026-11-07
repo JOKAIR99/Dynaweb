@@ -1,0 +1,103 @@
+import type {
+  Animation, AnimationType, HorizontalSettings, ParallaxSettings, RevealSettings,
+  Section, SectionContent, SectionStyle, SectionType,
+} from './schema';
+import type { IdGenerator } from './ids';
+
+/** Placeholder marker. Dynaweb never invents business facts; missing info is shown like this. */
+export const ph = (what: string): string => `[${what}]`;
+
+export const DEFAULT_PARALLAX: ParallaxSettings = {
+  speed: 0.35, depth: 0.6, direction: 'vertical', mouseInteraction: false, mouseStrength: 0.3,
+  scale: 1.1, perspective: 0, layers: [],
+};
+
+export const DEFAULT_REVEAL: RevealSettings = {
+  effect: 'slide-up', target: 'children', duration: 700, delay: 0, easing: 'expo-out',
+  distance: 40, stagger: 90, threshold: 0.15, initialOpacity: 0, initialScale: 0.92,
+  rotation: 8, once: true,
+};
+
+export const DEFAULT_HORIZONTAL: HorizontalSettings = {
+  panelWidth: 70, gap: 32, speed: 1, direction: 'ltr', snap: false, showProgress: true,
+  showIndicators: true, mobileLayout: 'vertical',
+};
+
+export function createAnimation(type: AnimationType, ids: IdGenerator): Animation {
+  const id = ids('anim');
+  switch (type) {
+    case 'parallax': return { id, type, enabled: true, settings: { ...DEFAULT_PARALLAX, layers: [] } };
+    case 'reveal': return { id, type, enabled: true, settings: { ...DEFAULT_REVEAL } };
+    case 'horizontal': return { id, type, enabled: true, settings: { ...DEFAULT_HORIZONTAL } };
+  }
+}
+
+const emptyLink = { label: '', href: '' };
+
+function baseContent(): SectionContent {
+  return { heading: '', subheading: '', body: '', imageUrl: '', primaryAction: emptyLink, secondaryAction: emptyLink, items: [] };
+}
+
+function baseStyle(): SectionStyle {
+  return {
+    paddingY: 96, minHeight: 0, align: 'start', maxWidth: 1200, background: 'bg', columns: 3,
+    hidden: { desktop: false, tablet: false, mobile: false },
+  };
+}
+
+export const SECTION_LABELS: Record<SectionType, string> = {
+  navigation: 'Navigation', hero: 'Hero', about: 'About', features: 'Features',
+  gallery: 'Gallery', cta: 'Call to action', footer: 'Footer',
+};
+
+/** Creates a section of the given type with placeholder content only. */
+export function createSection(type: SectionType, ids: IdGenerator): Section {
+  const content = baseContent();
+  const style = baseStyle();
+  const item = (title: string, text: string) => ({ id: ids('item'), title, text, imageUrl: '' });
+
+  switch (type) {
+    case 'navigation':
+      Object.assign(content, { heading: ph('Business name'), items: [item('About', '#about'), item('Gallery', '#gallery'), item('Contact', '#contact')] });
+      Object.assign(style, { paddingY: 20, columns: 1 });
+      break;
+    case 'hero':
+      Object.assign(content, {
+        heading: ph('Headline: what you offer, in one line'),
+        subheading: ph('One sentence on who it is for and why it matters'),
+        primaryAction: { label: ph('Primary action'), href: '#contact' },
+      });
+      Object.assign(style, { minHeight: 88, align: 'center', paddingY: 120 });
+      break;
+    case 'about':
+      Object.assign(content, { heading: ph('About heading'), body: ph('Your story: who you are, where you work, what makes you different.') });
+      Object.assign(style, { columns: 2 });
+      break;
+    case 'features':
+      Object.assign(content, {
+        heading: ph('What you offer'),
+        items: [item(ph('Offer one'), ph('Short description')), item(ph('Offer two'), ph('Short description')), item(ph('Offer three'), ph('Short description'))],
+      });
+      break;
+    case 'gallery':
+      Object.assign(content, {
+        heading: ph('Gallery heading'),
+        items: [1, 2, 3, 4, 5].map((n) => item(ph(`Image ${n} caption`), '')),
+      });
+      Object.assign(style, { background: 'surface' });
+      break;
+    case 'cta':
+      Object.assign(content, {
+        heading: ph('Invitation to act'),
+        subheading: ph('Contact details or booking information'),
+        primaryAction: { label: ph('Book or contact'), href: ph('booking link') },
+      });
+      Object.assign(style, { background: 'accent', align: 'center' });
+      break;
+    case 'footer':
+      Object.assign(content, { heading: ph('Business name'), body: ph('Address, phone, email'), subheading: ph('Legal notice') });
+      Object.assign(style, { paddingY: 48, background: 'text', columns: 2 });
+      break;
+  }
+  return { id: ids('sec'), type, name: SECTION_LABELS[type], content, style, animations: [] };
+}
