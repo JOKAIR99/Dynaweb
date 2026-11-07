@@ -25,35 +25,11 @@ const issue = (title, labels, difficulty, fields) => ({
 });
 
 export const ISSUES = [
-  issue('Add a Testimonials section that never invents quotes', ['templates', 'enhancement', 'good first issue', 'help wanted'], 'easy', {
-    problem: 'There is no testimonials section type. Generated content must never contain invented reviews.',
-    outcome: 'A `testimonials` section type whose items hold a quote, a name and a role, defaulting to clearly marked placeholders.',
-    context: 'Add the type to `SECTION_TYPES` in `src/model/schema.ts`, defaults in `src/model/defaults.ts` (`createSection`), markup in `src/render/html.ts` (`sectionBody`). Items reuse the existing item shape (`title` = name, `text` = quote).',
-    criteria: ['Section appears in the editor library', 'Default content is `[placeholder]` text only', 'Renderer test covers escaping of quote text', 'Works with scroll reveal `cards` target'],
-  }),
-  issue('Add a Pricing section', ['templates', 'enhancement', 'help wanted'], 'medium', {
-    problem: 'Service businesses need a pricing table; none exists.',
-    outcome: 'A `pricing` section with plan cards (name, price, description, call to action) and placeholder prices.',
-    context: 'Follow the pattern of `features` in `src/render/html.ts`. Prices must default to `[Price]` placeholders, never numbers.',
-    criteria: ['New section type with schema validation', 'Placeholder prices only', 'Responsive at 390, 820 and 1280 px', 'Tests for defaults and rendering'],
-  }),
   issue('Add an FAQ section with accessible disclosure', ['templates', 'accessibility', 'enhancement', 'good first issue'], 'easy', {
     problem: 'There is no FAQ section.',
     outcome: 'An `faq` section rendering questions and answers with native `<details>`/`<summary>`, so it works without JavaScript.',
     context: 'Items reuse `title` (question) and `text` (answer). Add focus styles via the existing `:focus-visible` tokens in `src/render/css.ts`.',
     criteria: ['Keyboard operable', 'No JavaScript needed', 'Tests for rendering and escaping'],
-  }),
-  issue('Add Statistics, Team and Services section types', ['templates', 'enhancement', 'help wanted'], 'medium', {
-    problem: 'The roadmap lists statistics, team and services sections; only seven section types exist.',
-    outcome: 'Three new section types, each with placeholder defaults and a responsive layout. Statistics must default to `[Figure]` placeholders.',
-    context: 'Same extension points as other section types: schema, defaults, renderer, editor library (automatic from `SECTION_TYPES`).',
-    criteria: ['Three types added with tests', 'No invented numbers or names', 'Checked at three device widths'],
-  }),
-  issue('Layout variants per section type', ['templates', 'design', 'enhancement'], 'hard', {
-    problem: 'Every hero, about or features section renders with one layout, so sites look alike.',
-    outcome: 'A `variant` field on sections (for example hero: centred, split, full-bleed image) selectable in the Style tab.',
-    context: 'Add an optional `variant` enum per type to `sectionStyleSchema` (or a discriminated field), with a storage migration in `src/storage/projectStore.ts` (bump `SCHEMA_VERSION`, add to `MIGRATIONS`).',
-    criteria: ['At least two variants for hero, about and features', 'Migration from schema 1 with a test', 'Generator picks variants from the preset so presets differ in layout too'],
   }),
   issue('Load any Google Fonts family chosen in the Theme tab', ['frontend', 'design', 'enhancement', 'good first issue'], 'easy', {
     problem: 'Changing the display or body font name in the Theme tab keeps the preset stylesheet, so the new family does not load.',
@@ -152,9 +128,9 @@ export const ISSUES = [
     criteria: ['Ratio shown for both pairs', 'Warning below 4.5:1', 'Unit tests for the contrast function'],
   }),
   issue('Docs: guide to adding a new section type', ['documentation', 'good first issue'], 'easy', {
-    problem: 'Adding a section type touches four files and the steps are not written down.',
+    problem: 'Adding a section type touches several files and the steps are not written down.',
     outcome: 'A `docs/adding-a-section.md` walkthrough with a worked example.',
-    context: 'Files: `src/model/schema.ts`, `src/model/defaults.ts`, `src/render/html.ts`, tests in `tests/`.',
+    context: 'Files: `src/model/schema.ts` (`SECTION_TYPES` and `SECTION_VARIANTS`), `src/model/defaults.ts`, `src/render/html.ts` and `css.ts`, the planner in `src/generator/generate.ts`, editor labels in `src/editor/panels/Inspector.tsx`, tests in `tests/`. The Team, Key figures and Product showcase sections are good worked examples.',
     criteria: ['Step-by-step guide linked from CONTRIBUTING.md', 'Example compiles if copied'],
   }),
   issue('Docs: animation runtime guide for creative developers', ['documentation', 'animation'], 'easy', {
