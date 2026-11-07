@@ -7,14 +7,17 @@ import RUNTIME from '../src/runtime/engine.js?raw';
 
 interface FakeIO { targets: Element[]; fire: (el: Element, isIntersecting: boolean, top?: number) => void; disconnected: boolean }
 
-function setup(opts: { reducedMotion?: boolean; width?: number; html?: string } = {}) {
+function setup(opts: { reducedMotion?: boolean; width?: number; html?: string; finePointer?: boolean } = {}) {
   const html = opts.html ?? renderPage(sampleProject(), { mode: 'export', runtimeJs: '' });
   const dom = new JSDOM(html, { pretendToBeVisual: true, runScripts: 'outside-only' });
   const win = dom.window as unknown as Window & Record<string, unknown>;
   const observers: FakeIO[] = [];
   Object.defineProperty(win, 'innerWidth', { value: opts.width ?? 1280, configurable: true });
   Object.defineProperty(win, 'innerHeight', { value: 800, configurable: true });
-  win.matchMedia = ((q: string) => ({ matches: q.includes('reduce') && !!opts.reducedMotion, addEventListener() {}, removeEventListener() {} })) as never;
+  win.matchMedia = ((q: string) => ({
+    matches: (q.includes('reduce') && !!opts.reducedMotion) || (q.includes('pointer: fine') && !!opts.finePointer),
+    addEventListener() {}, removeEventListener() {},
+  })) as never;
   win.IntersectionObserver = class {
     targets: Element[] = [];
     disconnected = false;
@@ -137,5 +140,108 @@ describe('runtime: cleanup', () => {
     runtime.init();
     runtime.init();
     expect(listeners.scroll).toBe(1);
+  });
+});
+
+describe('runtime: forms', () => {
+  const withEndpoint = (endpoint: string) => {
+    const p = sampleProject();
+    const contact = p.pages[0].sections.find((s) => s.type === 'contact')!;
+    contact.content.formEndpoint = endpoint;
+    return renderPage(p, { mode: 'export', runtimeJs: '' });
+  };
+  const fill = (doc: Document, values: Record<string, string>) => {
+    for (const [name, value] of Object.entries(values)) (doc.querySelector(`form [name="${name}"]`) as HTMLInputElement).value = value;
+  };
+  const submit = (doc: Document) => doc.querySelector('form')!.dispatchEvent(new doc.defaultView!.Event('submit', { cancelable: true }));
+  const flush = () => new Promise((r) => setTimeout(r, 0));
+
+  it('blocks submission and explains each invalid field', () => {
+    const { doc, runtime } = setup();
+    runtime.init();
+    fill(doc, { email: 'not-an-email' });
+    submit(doc);
+    const email = doc.querySelector('form [name="email"]') as HTMLInputElement;
+    expect(email.getAttribute('aria-invalid')).toBe('true');
+    expect(doc.getElementById(`${email.id}-err`)!.textContent).toContain('valid email');
+    expect(doc.activeElement?.getAttribute('name')).toBe('name'); // first invalid field gets focus
+  });
+
+  it('works under reduced motion too', () => {
+    const { doc, runtime } = setup({ reducedMotion: true });
+    runtime.init();
+    submit(doc);
+    expect((doc.querySelector('form [name="name"]') as HTMLElement).getAttribute('aria-invalid')).toBe('true');
+  });
+
+  it('never pretends to send when no endpoint is configured', () => {
+    const { doc, runtime } = setup();
+    runtime.init();
+    fill(doc, { name: 'Ana', email: 'ana@example.com', date: '2999-01-01', guests: '2' });
+    submit(doc);
+    expect(doc.querySelector('.dw-form-status')!.textContent).toContain('not connected yet');
+  });
+
+  it('rejects a date in the past', () => {
+    const { doc, runtime } = setup();
+    runtime.init();
+    fill(doc, { name: 'Ana', email: 'ana@example.com', date: '2001-01-01', guests: '2' });
+    submit(doc);
+    const date = doc.querySelector('form [name="date"]') as HTMLInputElement;
+    expect(doc.getElementById(`${date.id}-err`)!.textContent).toContain('from today');
+  });
+
+  it('posts to the endpoint and reports success honestly', async () => {
+    const { win, doc, runtime } = setup({ html: withEndpoint('https://forms.example/f/1') });
+    const calls: string[] = [];
+    win.fetch = ((url: string) => { calls.push(url); return Promise.resolve({ ok: true, status: 200 }); }) as never;
+    runtime.init();
+    fill(doc, { name: 'Ana', email: 'ana@example.com', date: '2999-01-01', guests: '3' });
+    submit(doc);
+    expect(doc.querySelector('.dw-form-status')!.textContent).toBe('Sending...');
+    expect((doc.querySelector('form button') as HTMLButtonElement).disabled).toBe(true);
+    await flush(); await flush();
+    expect(calls).toEqual(['https://forms.example/f/1']);
+    expect(doc.querySelector('.dw-form-status')!.textContent).toContain('not a confirmed booking yet');
+    expect((doc.querySelector('form button') as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('reports a failed request instead of success', async () => {
+    const { win, doc, runtime } = setup({ html: withEndpoint('https://forms.example/f/1') });
+    win.fetch = (() => Promise.resolve({ ok: false, status: 500 })) as never;
+    runtime.init();
+    fill(doc, { name: 'Ana', email: 'ana@example.com', date: '2999-01-01', guests: '3' });
+    submit(doc);
+    await flush(); await flush();
+    expect(doc.querySelector('.dw-form-status')!.textContent).toContain('Sending failed');
+  });
+
+  it('drops bot submissions caught by the honeypot without sending', () => {
+    const { win, doc, runtime } = setup({ html: withEndpoint('https://forms.example/f/1') });
+    let sent = false;
+    win.fetch = (() => { sent = true; return Promise.resolve({ ok: true }); }) as never;
+    runtime.init();
+    fill(doc, { name: 'Bot', email: 'bot@example.com', date: '2999-01-01', guests: '3', company_website: 'spam' });
+    submit(doc);
+    expect(sent).toBe(false);
+    expect(doc.querySelector('.dw-form-status')!.textContent).toBe('');
+  });
+});
+
+describe('runtime: magnetic buttons', () => {
+  it('follows the pointer on fine pointers only and resets on leave', () => {
+    const fine = setup({ finePointer: true });
+    fine.runtime.init();
+    const btn = fine.doc.querySelector('.dw-btn') as HTMLElement;
+    btn.getBoundingClientRect = () => ({ left: 0, top: 0, width: 100, height: 40 }) as DOMRect;
+    const Ev = fine.win.MouseEvent as typeof MouseEvent;
+    btn.dispatchEvent(new Ev('pointermove', { clientX: 100, clientY: 40 }));
+    expect(btn.style.transform).toBe('translate3d(12.0px,7.0px,0)');
+    btn.dispatchEvent(new Ev('pointerleave'));
+    expect(btn.style.transform).toBe('');
+
+    const touch = setup({ finePointer: false });
+    touch.runtime.init();
+    expect(touch.doc.querySelector('.dw-magnet')).toBeNull();
   });
 });

@@ -97,3 +97,11 @@ textarea { resize: vertical; }
   .wz-grid { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { .ed-device { transition: none; } }
+.wz-proposals { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+.wz-proposal { display: grid; gap: 6px; text-align: left; padding: 12px; align-content: start; }
+.wz-proposal.is-on { outline: 2px solid var(--ui-accent); }
+.wz-proposal span { color: var(--ui-muted); font-size: 12px; }
+.wz-proposal strong { font-size: 15px; }
+.wz-direction { display: grid; gap: 4px; padding: 10px 12px; border-radius: 8px; background: var(--ui-bg); }
+.wz-direction p { margin: 0; }
+.wz-proposal .wz-character { color: var(--ui-text); font-size: 13px; }

@@ -4,6 +4,13 @@ import { Select, Slider, TextInput, Toggle } from '../controls';
 
 interface Props { pageId: string; section: Section; dispatch: (c: Command) => void }
 
+type SectionType = Section['type'];
+const ITEM_LABELS: Partial<Record<SectionType, string>> = {
+  gallery: 'Images / panels', navigation: 'Links', testimonials: 'Testimonials', pricing: 'Options', services: 'Services',
+};
+const ITEM_TITLE: Partial<Record<SectionType, string>> = { testimonials: 'Customer name', pricing: 'Option name' };
+const ITEM_TEXT: Partial<Record<SectionType, string>> = { testimonials: 'Quote', pricing: 'Price and what is included' };
+
 export function ContentPanel({ pageId, section, dispatch }: Props) {
   const base = { pageId, sectionId: section.id };
   const c = section.content;
@@ -14,11 +21,18 @@ export function ContentPanel({ pageId, section, dispatch }: Props) {
       <TextInput label="Section name (editor only)" value={section.name} onChange={(v) => dispatch({ kind: 'renameSection', ...base, name: v || section.name })} />
       <TextInput label="Heading" value={c.heading} onChange={(v) => set({ heading: v })} />
       {section.type !== 'navigation' && <TextInput label="Subheading" value={c.subheading} multiline onChange={(v) => set({ subheading: v })} />}
-      {['about', 'footer'].includes(section.type) && <TextInput label="Body" value={c.body} multiline onChange={(v) => set({ body: v })} />}
+      {['about', 'footer', 'contact'].includes(section.type) && <TextInput label={section.type === 'contact' ? 'Contact details' : 'Body'} value={c.body} multiline onChange={(v) => set({ body: v })} />}
+      {section.type === 'contact' && (
+        <>
+          <Select label="Form type" value={c.formKind} options={[{ value: 'inquiry', label: 'Inquiry (name, email, message)' }, { value: 'booking', label: 'Booking request (adds date and guests)' }]} onChange={(v) => set({ formKind: v })} />
+          <TextInput label="Form endpoint (https)" value={c.formEndpoint} placeholder="https://formspree.io/f/your-id" onChange={(v) => set({ formEndpoint: v.trim() })} />
+          <p className="ed-hint">The form posts here: any service that accepts form POSTs, or your own API. Without an endpoint the published form says it is not connected; it never pretends to send.</p>
+        </>
+      )}
       {['hero', 'about'].includes(section.type) && (
         <TextInput label={section.type === 'hero' ? 'Background image URL (https)' : 'Image URL (https)'} value={c.imageUrl} onChange={(v) => set({ imageUrl: v })} />
       )}
-      {['hero', 'about', 'cta'].includes(section.type) && (
+      {['hero', 'about', 'cta', 'pricing'].includes(section.type) && (
         <>
           <TextInput label="Primary button label" value={c.primaryAction.label} onChange={(v) => set({ primaryAction: { ...c.primaryAction, label: v } })} />
           <TextInput label="Primary button link" value={c.primaryAction.href} onChange={(v) => set({ primaryAction: { ...c.primaryAction, href: v } })} />
@@ -26,17 +40,18 @@ export function ContentPanel({ pageId, section, dispatch }: Props) {
           <TextInput label="Secondary button link" value={c.secondaryAction.href} onChange={(v) => set({ secondaryAction: { ...c.secondaryAction, href: v } })} />
         </>
       )}
-      {['navigation', 'features', 'gallery'].includes(section.type) && (
+      {['navigation', 'features', 'services', 'gallery', 'testimonials', 'pricing'].includes(section.type) && (
         <div className="ed-stack">
-          <div className="ed-sub">{section.type === 'gallery' ? 'Images / panels' : section.type === 'navigation' ? 'Links' : 'Items'}</div>
+          <div className="ed-sub">{ITEM_LABELS[section.type] ?? 'Items'}</div>
+          {section.type === 'testimonials' && <p className="ed-hint">Publish only real reviews, with the customer's permission.</p>}
           {c.items.map((item, i) => (
             <div key={item.id} className="ed-layer">
               <div className="ed-row"><strong>#{i + 1}</strong>
                 <button type="button" className="ed-danger" onClick={() => dispatch({ kind: 'removeItem', ...base, itemId: item.id })}>Remove</button>
               </div>
-              <TextInput label="Title" value={item.title} onChange={(v) => dispatch({ kind: 'updateItem', ...base, itemId: item.id, patch: { title: v } })} />
-              {section.type !== 'gallery' && <TextInput label={itemLabel} value={item.text} onChange={(v) => dispatch({ kind: 'updateItem', ...base, itemId: item.id, patch: { text: v } })} />}
-              {section.type !== 'navigation' && <TextInput label="Image URL (https)" value={item.imageUrl} onChange={(v) => dispatch({ kind: 'updateItem', ...base, itemId: item.id, patch: { imageUrl: v } })} />}
+              <TextInput label={ITEM_TITLE[section.type] ?? 'Title'} value={item.title} onChange={(v) => dispatch({ kind: 'updateItem', ...base, itemId: item.id, patch: { title: v } })} />
+              {section.type !== 'gallery' && <TextInput label={ITEM_TEXT[section.type] ?? itemLabel} value={item.text} onChange={(v) => dispatch({ kind: 'updateItem', ...base, itemId: item.id, patch: { text: v } })} />}
+              {!['navigation', 'testimonials', 'pricing'].includes(section.type) && <TextInput label="Image URL (https)" value={item.imageUrl} onChange={(v) => dispatch({ kind: 'updateItem', ...base, itemId: item.id, patch: { imageUrl: v } })} />}
             </div>
           ))}
           <button type="button" onClick={() => dispatch({ kind: 'addItem', ...base })}>+ Add</button>

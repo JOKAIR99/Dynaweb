@@ -76,7 +76,7 @@ tests/         model, storage, render, runtime
 | 0 Audit | Done |
 | 1 Foundation: model, persistence, main interface | Done (vertical slice) |
 | 2 Visual editor | Mostly done: canvas selection, sidebars, drag-and-drop ordering, devices, zoom, undo/redo. Missing: inline text editing on canvas, element-level (not section-level) selection, assets panel |
-| 3 Design engine | Started: 4 presets, theme editor, 7 section types. Missing: font loading for custom families, more sections (testimonials, pricing, team, FAQ, statistics, services, product showcase), layout variants per section, multi-page |
+| 3 Design engine | Working: brief engine (schema v2), art-direction proposals, structure planner, 6 presets, 11 section types, working contact and booking forms, micro-interactions, SEO output (see `docs/interaction-specs.md`). Missing: layout variants per section, custom font loading, team, FAQ, statistics and product showcase sections, multi-page |
 | 4 Animation engine | Working: parallax (layers, depth, mouse, direction, scale, perspective), reveal (12 effects, 6 targets, stagger, easing, once/replay, timeline view), horizontal (pin, speed, direction, snap, progress, indicators, mobile fallback). Missing: element-level animation targets, scroll start/end positions for parallax |
 | 5 AI integration | Not started. The Command contract is ready for it |
 | 6 Export and publishing | Single-file HTML export and JSON project files work. Missing: multi-page export as a ZIP, local asset bundling, publishing |

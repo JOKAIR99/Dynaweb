@@ -77,6 +77,26 @@ html.dw-js .dw-h-active .dw-h-dots { display: flex; gap: 0.5rem; position: absol
 .dw-rv { transition-property: opacity, transform, filter, clip-path; transition-duration: var(--dw-rv-dur, 700ms); transition-delay: var(--dw-rv-delay, 0ms); transition-timing-function: var(--dw-rv-ease, ease-out); }
 .dw-rv:not(.dw-in) { opacity: var(--dw-rv-o, 0); transform: var(--dw-rv-t, none); filter: var(--dw-rv-f, none); clip-path: var(--dw-rv-c, none); }
 .dw-rv.dw-rv-out.dw-in { opacity: 0; }
+/* Testimonials, pricing */
+.dw-quote { margin: 0; } .dw-quote blockquote { margin: 0 0 1rem; } .dw-quote figcaption { font-weight: 600; }
+.dw-price h3 { margin-bottom: 0.75rem; }
+.dw-small { font-size: 0.875rem; }
+/* Forms */
+.dw-form { display: grid; gap: 1rem; padding: clamp(1.25rem, 3vw, 2rem); border-radius: var(--dw-radius); background: var(--dw-surface); color: var(--dw-text); text-align: start; }
+.dw-bg-surface .dw-form { background: var(--dw-bg); }
+.dw-field { display: grid; gap: 0.35rem; }
+.dw-field label { font-weight: 600; }
+.dw-form input, .dw-form textarea { font: inherit; color: var(--dw-text); background: var(--dw-bg); border: 1px solid var(--dw-muted); border-radius: calc(var(--dw-radius) / 2); padding: 0.75em 0.9em; min-height: 44px; width: 100%; }
+.dw-form input:focus-visible, .dw-form textarea:focus-visible { outline: 3px solid var(--dw-accent); outline-offset: 1px; }
+.dw-form [aria-invalid="true"] { border-color: var(--dw-accent); border-width: 2px; }
+.dw-error { margin: 0; min-height: 1.2em; font-size: 0.875rem; color: var(--dw-accent); }
+.dw-form-status { margin: 0; font-weight: 600; min-height: 1.2em; }
+.dw-form button[disabled] { opacity: 0.6; cursor: progress; }
+.dw-hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+/* Micro-interactions */
+.dw-hover .dw-card { transition: transform 220ms ease-out, opacity 220ms ease-out; }
+.dw-hover .dw-card:hover { transform: translateY(-4px); }
+.dw-btn.dw-magnet { transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1); }
 @media (max-width: 767px) { .dw-grid { grid-template-columns: minmax(0, 1fr); } .dw-hide-mobile { display: none !important; } }
 @media (min-width: 768px) and (max-width: 1099px) { .dw-grid { grid-template-columns: repeat(min(var(--dw-cols, 3), 2), minmax(0, 1fr)); } .dw-hide-tablet { display: none !important; } }
 @media (min-width: 1100px) { .dw-hide-desktop { display: none !important; } }
@@ -84,6 +104,7 @@ html.dw-js .dw-h-active .dw-h-dots { display: flex; gap: 0.5rem; position: absol
   .dw-rv { transition: none !important; opacity: 1 !important; transform: none !important; filter: none !important; clip-path: none !important; }
   .dw-plx-layer { transform: none !important; }
   .dw-btn { transition: none; }
+  .dw-hover .dw-card, .dw-hover .dw-card:hover, .dw-btn.dw-magnet { transition: none; transform: none !important; }
 }
 `;
 }

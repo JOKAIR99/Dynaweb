@@ -1,7 +1,7 @@
 import type { Command } from '../../model/commands';
 import type { Theme } from '../../model/schema';
 import { PRESETS } from '../../generator/presets';
-import { ColorInput, Select, Slider, TextInput } from '../controls';
+import { ColorInput, Select, Slider, TextInput, Toggle } from '../controls';
 
 const COLOR_LABELS: Record<keyof Theme['colors'], string> = {
   bg: 'Page background', surface: 'Surface', text: 'Text', muted: 'Muted text', accent: 'Accent', accentText: 'Text on accent',
@@ -33,6 +33,8 @@ export function ThemePanel({ theme, dispatch }: { theme: Theme; dispatch: (c: Co
       ))}
       <div className="ed-sub">Shape and motion</div>
       <Slider label="Corner radius" value={theme.radius} min={0} max={40} unit="px" onChange={(v) => set({ radius: v })} />
+      <Toggle label="Magnetic buttons (mouse and trackpad only)" value={theme.interactions.magneticButtons} onChange={(v) => set({ interactions: { ...theme.interactions, magneticButtons: v } })} />
+      <Toggle label="Cards lift on hover" value={theme.interactions.cardHover} onChange={(v) => set({ interactions: { ...theme.interactions, cardHover: v } })} />
       <Select label="Motion level" value={theme.motion} options={[{ value: 'none', label: 'None (all animations off)' }, { value: 'subtle', label: 'Subtle' }, { value: 'expressive', label: 'Expressive' }]} onChange={(v) => set({ motion: v })} />
     </div>
   );
