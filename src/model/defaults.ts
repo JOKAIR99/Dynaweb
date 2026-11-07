@@ -47,7 +47,7 @@ function baseStyle(): SectionStyle {
 
 export const SECTION_LABELS: Record<SectionType, string> = {
   navigation: 'Navigation', hero: 'Hero', about: 'About', features: 'Features',
-  services: 'Services', gallery: 'Gallery', testimonials: 'Testimonials', pricing: 'Pricing',
+  services: 'Services', statistics: 'Key figures', showcase: 'Product showcase', team: 'Team', gallery: 'Gallery', testimonials: 'Testimonials', pricing: 'Pricing',
   cta: 'Call to action', contact: 'Contact', footer: 'Footer',
 };
 
@@ -86,6 +86,29 @@ export function createSection(type: SectionType, ids: IdGenerator): Section {
         items: [1, 2, 3].map((n) => item(ph(`Service ${n}`), ph('What it includes and who it is for'))),
       });
       Object.assign(style, { background: 'surface' });
+      break;
+    case 'statistics':
+      // Never invented: every figure is a placeholder until the owner enters a real, sourced number.
+      Object.assign(content, {
+        heading: ph('Key figures heading'),
+        items: [1, 2, 3].map((n) => item(ph(`Figure ${n}`), ph('What the figure measures'))),
+      });
+      Object.assign(style, { paddingY: 72 });
+      break;
+    case 'showcase':
+      Object.assign(content, {
+        heading: ph('Products heading'),
+        items: [1, 2, 3].map((n) => item(ph(`Product ${n}`), ph('Description and price'))),
+        primaryAction: { label: ph('Shop or order'), href: ph('shop link') },
+      });
+      Object.assign(style, { columns: 3 });
+      break;
+    case 'team':
+      Object.assign(content, {
+        heading: ph('The people behind it'),
+        items: [1, 2, 3].map((n) => item(ph(`Person ${n} name`), ph('Role'))),
+      });
+      Object.assign(style, { columns: 3, background: 'surface' });
       break;
     case 'testimonials':
       // Never invented: real quotes only, published with the customer's permission.

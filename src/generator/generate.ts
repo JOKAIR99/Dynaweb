@@ -18,11 +18,11 @@ export interface GenerateInput {
  * Types not listed use the standard layout.
  */
 export const PRESET_LAYOUTS: Record<string, Partial<Record<SectionType, string>>> = {
-  lagoon: { hero: 'fullbleed', services: 'asymmetric', features: 'asymmetric', gallery: 'masonry', cta: 'split' },
-  ledger: { hero: 'editorial', about: 'editorial', services: 'list', features: 'list', testimonials: 'spotlight', pricing: 'list', footer: 'stacked' },
+  lagoon: { statistics: 'band', hero: 'fullbleed', services: 'asymmetric', features: 'asymmetric', gallery: 'masonry', cta: 'split' },
+  ledger: { team: 'list', hero: 'editorial', about: 'editorial', services: 'list', features: 'list', testimonials: 'spotlight', pricing: 'list', footer: 'stacked' },
   nocturne: { hero: 'fullbleed', about: 'reversed', services: 'list', features: 'list', gallery: 'filmstrip', testimonials: 'spotlight', cta: 'split', contact: 'centered' },
-  kiosk: { hero: 'split', services: 'asymmetric', features: 'asymmetric', gallery: 'masonry', navigation: 'centered' },
-  quarry: { hero: 'split', about: 'reversed', services: 'list', features: 'list', pricing: 'list', contact: 'centered' },
+  kiosk: { statistics: 'band', showcase: 'grid', hero: 'split', services: 'asymmetric', features: 'asymmetric', gallery: 'masonry', navigation: 'centered' },
+  quarry: { team: 'list', showcase: 'grid', hero: 'split', about: 'reversed', services: 'list', features: 'list', pricing: 'list', contact: 'centered' },
   canopy: { hero: 'editorial', about: 'reversed', gallery: 'masonry', testimonials: 'spotlight', footer: 'stacked' },
 };
 
@@ -34,10 +34,14 @@ const has = (text: string, ...words: string[]) => words.some((w) => text.include
  * no testimonials section unless reviews matter for the decision.
  */
 export function planSections(meta: ProjectMeta): SectionType[] {
+  const brief = meta.brief.toLowerCase();
   const plan: SectionType[] = ['navigation', 'hero', 'about'];
-  const offer: SectionType = meta.sector === 'other' ? 'features' : 'services';
+  // Figures only when the brief asks for them or proof drives leads; values stay placeholders.
+  if (has(brief, 'figures', 'numbers', 'statistics', 'stats', 'key facts') || (meta.goal === 'leads' && meta.sector === 'other')) plan.push('statistics');
+  const offer: SectionType = meta.goal === 'sales' ? 'showcase' : meta.sector === 'other' ? 'features' : 'services';
   plan.push(offer);
-  if (meta.sector !== 'other' || has(meta.brief.toLowerCase(), 'gallery', 'portfolio', 'photo')) plan.push('gallery');
+  if (meta.sector !== 'other' || has(brief, 'gallery', 'portfolio', 'photo')) plan.push('gallery');
+  if (has(brief, 'team', 'chef', 'guide', 'crew', 'founder', 'staff', 'people')) plan.push('team');
   const reviewsMatter = meta.goal === 'bookings' || meta.goal === 'sales' || meta.goal === 'leads';
   if (reviewsMatter) plan.push('testimonials');
   if (meta.goal === 'sales' || (meta.goal === 'bookings' && meta.sector !== 'restaurant')) plan.push('pricing');
@@ -65,7 +69,7 @@ function animationsFor(type: SectionType, meta: ProjectMeta, motion: 0 | 1 | 2, 
 
   if (type === 'hero') return depthy ? [createAnimation('parallax', ids)] : [];
   if (type === 'gallery') return sideways ? [createAnimation('horizontal', ids)] : [revealFor(meta, motion, ids, 'cards')];
-  if (['about', 'services', 'features', 'testimonials', 'pricing', 'cta', 'contact'].includes(type)) {
+  if (['about', 'statistics', 'services', 'features', 'showcase', 'team', 'testimonials', 'pricing', 'cta', 'contact'].includes(type)) {
     return [revealFor(meta, motion, ids, type === 'about' || type === 'cta' ? 'children' : 'cards')];
   }
   return [];

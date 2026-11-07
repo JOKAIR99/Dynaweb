@@ -8,9 +8,15 @@ interface Props { pageId: string; section: Section; dispatch: (c: Command) => vo
 type SectionType = Section['type'];
 const ITEM_LABELS: Partial<Record<SectionType, string>> = {
   gallery: 'Images / panels', navigation: 'Links', testimonials: 'Testimonials', pricing: 'Options', services: 'Services',
+  statistics: 'Figures', showcase: 'Products', team: 'People',
 };
-const ITEM_TITLE: Partial<Record<SectionType, string>> = { testimonials: 'Customer name', pricing: 'Option name' };
-const ITEM_TEXT: Partial<Record<SectionType, string>> = { testimonials: 'Quote', pricing: 'Price and what is included' };
+const ITEM_TITLE: Partial<Record<SectionType, string>> = {
+  testimonials: 'Customer name', pricing: 'Option name', statistics: 'Figure (real and sourced)', showcase: 'Product name', team: 'Name',
+};
+const ITEM_TEXT: Partial<Record<SectionType, string>> = {
+  testimonials: 'Quote', pricing: 'Price and what is included', statistics: 'What it measures', showcase: 'Description and price', team: 'Role',
+};
+const ITEM_SECTIONS: SectionType[] = ['navigation', 'features', 'services', 'gallery', 'testimonials', 'pricing', 'statistics', 'showcase', 'team'];
 
 export function ContentPanel({ pageId, section, dispatch }: Props) {
   const base = { pageId, sectionId: section.id };
@@ -33,7 +39,7 @@ export function ContentPanel({ pageId, section, dispatch }: Props) {
       {['hero', 'about'].includes(section.type) && (
         <TextInput label={section.type === 'hero' ? 'Background image URL (https)' : 'Image URL (https)'} value={c.imageUrl} onChange={(v) => set({ imageUrl: v })} />
       )}
-      {['hero', 'about', 'cta', 'pricing'].includes(section.type) && (
+      {['hero', 'about', 'cta', 'pricing', 'showcase'].includes(section.type) && (
         <>
           <TextInput label="Primary button label" value={c.primaryAction.label} onChange={(v) => set({ primaryAction: { ...c.primaryAction, label: v } })} />
           <TextInput label="Primary button link" value={c.primaryAction.href} onChange={(v) => set({ primaryAction: { ...c.primaryAction, href: v } })} />
@@ -41,10 +47,12 @@ export function ContentPanel({ pageId, section, dispatch }: Props) {
           <TextInput label="Secondary button link" value={c.secondaryAction.href} onChange={(v) => set({ secondaryAction: { ...c.secondaryAction, href: v } })} />
         </>
       )}
-      {['navigation', 'features', 'services', 'gallery', 'testimonials', 'pricing'].includes(section.type) && (
+      {ITEM_SECTIONS.includes(section.type) && (
         <div className="ed-stack">
           <div className="ed-sub">{ITEM_LABELS[section.type] ?? 'Items'}</div>
           {section.type === 'testimonials' && <p className="ed-hint">Publish only real reviews, with the customer's permission.</p>}
+          {section.type === 'statistics' && <p className="ed-hint">Only publish figures you can back up, such as "12 years" or "4,000 guests in 2025".</p>}
+          {section.type === 'team' && <p className="ed-hint">Use real names and photos only with each person's agreement.</p>}
           {c.items.map((item, i) => (
             <div key={item.id} className="ed-layer">
               <div className="ed-row"><strong>#{i + 1}</strong>
@@ -52,7 +60,7 @@ export function ContentPanel({ pageId, section, dispatch }: Props) {
               </div>
               <TextInput label={ITEM_TITLE[section.type] ?? 'Title'} value={item.title} onChange={(v) => dispatch({ kind: 'updateItem', ...base, itemId: item.id, patch: { title: v } })} />
               {section.type !== 'gallery' && <TextInput label={ITEM_TEXT[section.type] ?? itemLabel} value={item.text} onChange={(v) => dispatch({ kind: 'updateItem', ...base, itemId: item.id, patch: { text: v } })} />}
-              {!['navigation', 'testimonials', 'pricing'].includes(section.type) && <TextInput label="Image URL (https)" value={item.imageUrl} onChange={(v) => dispatch({ kind: 'updateItem', ...base, itemId: item.id, patch: { imageUrl: v } })} />}
+              {!['navigation', 'testimonials', 'pricing', 'statistics'].includes(section.type) && <TextInput label="Image URL (https)" value={item.imageUrl} onChange={(v) => dispatch({ kind: 'updateItem', ...base, itemId: item.id, patch: { imageUrl: v } })} />}
             </div>
           ))}
           <button type="button" onClick={() => dispatch({ kind: 'addItem', ...base })}>+ Add</button>
