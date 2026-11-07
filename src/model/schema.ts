@@ -7,7 +7,7 @@ import { z } from 'zod';
  * always derived, never stored.
  */
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 const idSchema = z.string().regex(/^[a-z]+_[a-z0-9]+$/, 'invalid id');
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'expected #rrggbb');
@@ -109,7 +109,34 @@ export const sectionStyleSchema = z.object({
   background: z.enum(['bg', 'surface', 'accent', 'text']),
   columns: z.number().int().min(1).max(4),
   hidden: z.object({ desktop: z.boolean(), tablet: z.boolean(), mobile: z.boolean() }),
+  /** Layout variant; which ones are allowed depends on the section type (SECTION_VARIANTS). */
+  variant: z.string().regex(/^[a-z-]{1,24}$/),
 });
+
+/**
+ * Layout variants per section type. The first one is the default. Two sites
+ * with the same sections look different because presets pick different
+ * variants, and the owner can switch any of them in the Style tab.
+ */
+export const SECTION_VARIANTS = {
+  navigation: ['standard', 'centered'],
+  hero: ['standard', 'split', 'fullbleed', 'editorial'],
+  about: ['standard', 'reversed', 'editorial'],
+  features: ['standard', 'list', 'asymmetric'],
+  services: ['standard', 'list', 'asymmetric'],
+  gallery: ['standard', 'masonry', 'filmstrip'],
+  testimonials: ['standard', 'spotlight'],
+  pricing: ['standard', 'list'],
+  cta: ['standard', 'split'],
+  contact: ['standard', 'centered'],
+  footer: ['standard', 'stacked'],
+} as const satisfies Record<(typeof SECTION_TYPES)[number], readonly [string, ...string[]]>;
+
+export const VARIANT_LABELS: Record<string, string> = {
+  standard: 'Standard', centered: 'Centred', split: 'Split with image', fullbleed: 'Full-bleed image',
+  editorial: 'Editorial', reversed: 'Image first', list: 'Numbered list', asymmetric: 'Featured first',
+  masonry: 'Masonry', filmstrip: 'Filmstrip', spotlight: 'Spotlight quote', stacked: 'Stacked',
+};
 
 export const sectionSchema = z.object({
   id: idSchema,
@@ -118,6 +145,9 @@ export const sectionSchema = z.object({
   content: sectionContentSchema,
   style: sectionStyleSchema,
   animations: z.array(animationSchema).max(3),
+}).refine((s) => (SECTION_VARIANTS[s.type] as readonly string[]).includes(s.style.variant), {
+  message: 'layout variant is not available for this section type',
+  path: ['style', 'variant'],
 });
 
 // ---------- Theme ----------

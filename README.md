@@ -49,6 +49,7 @@ All three respect `prefers-reduced-motion`, keep content visible without JavaScr
 - **Visual editor:** section list with drag-and-drop reordering, duplicate and delete; a section library; a live canvas where you click a section to select it; desktop, tablet and mobile preview; zoom; undo and redo.
 - **Inspector:** content (headings, text, buttons, images, items), style (background, alignment, spacing, width, columns, per-device visibility), animation designers, and theme (presets, fonts, colours, radius, type scale, motion level).
 - **Brief engine and art direction:** sector, location, atmosphere, objective, languages, references and site address drive three ranked design proposals and the section structure (services, testimonials, pricing, contact only when the business needs them).
+- **Layout variants:** every section type has several layouts (split, full-bleed or editorial hero, numbered or featured-first lists, masonry or filmstrip galleries, spotlight quotes...). Each preset composes pages differently, and you can switch any section's layout in the Style tab.
 - **Working forms:** contact and booking forms with real-time validation that post to any https form endpoint, and say honestly when no endpoint is connected. Booking requests are never shown as confirmed.
 - **SEO:** Open Graph, canonical URL, JSON-LD from real facts only, sitemap.xml and robots.txt.
 - **Export:** one standalone HTML file with its CSS and the animation runtime inlined. Projects save automatically in the browser and can be saved and opened as `.dynaweb.json` files.

@@ -65,8 +65,19 @@ function sectionBody(section: Section): string {
     case 'navigation':
       return `<a class="dw-brand" href="#">${esc(c.heading)}</a><nav aria-label="Main"><ul>${c.items
         .map((i) => `<li><a href="${esc(safeHref(i.text))}">${esc(i.title)}</a></li>`).join('')}</ul></nav>`;
-    case 'hero':
-      return `<h1>${esc(c.heading)}</h1>${para(c.subheading, 'dw-lead dw-muted')}${actions(section)}`;
+    case 'hero': {
+      const text = `<h1>${esc(c.heading)}</h1>${para(c.subheading, 'dw-lead dw-muted')}${actions(section)}`;
+      const v = section.style.variant;
+      if (v === 'split') return `<div class="dw-hero-text">${text}</div>${media(c.imageUrl, c.heading)}`;
+      if (v === 'fullbleed') {
+        // With parallax on, the parallax layer already shows the image.
+        const parallax = section.animations.some((a) => a.type === 'parallax' && a.enabled);
+        const src = safeImage(c.imageUrl);
+        const bg = parallax ? '' : src ? `<img class="dw-hero-bg" src="${esc(src)}" alt="" fetchpriority="high">` : '<div class="dw-hero-bg dw-plx-placeholder"></div>';
+        return `${bg}<div class="dw-hero-text">${text}</div>`;
+      }
+      return text;
+    }
     case 'about':
       return `<div class="dw-grid"><div><h2>${esc(c.heading)}</h2>${para(c.subheading, 'dw-lead')}${para(c.body, 'dw-muted')}${actions(section)}</div>${media(c.imageUrl, c.heading)}</div>`;
     case 'features':
@@ -138,7 +149,7 @@ function contactForm(section: Section): string {
 export function renderSection(section: Section, anchor: string = section.type): string {
   const st = section.style;
   const classes = [
-    'dw-section', `dw-${section.type === 'navigation' ? 'nav' : section.type}`, `dw-bg-${st.background}`, `dw-align-${st.align}`,
+    'dw-section', `dw-${section.type === 'navigation' ? 'nav' : section.type}`, `dw-bg-${st.background}`, `dw-align-${st.align}`, `dw-v-${st.variant}`,
     ...(['desktop', 'tablet', 'mobile'] as const).filter((d) => st.hidden[d]).map((d) => `dw-hide-${d}`),
   ];
   const horizontal = section.animations.find((a) => a.type === 'horizontal' && a.enabled);

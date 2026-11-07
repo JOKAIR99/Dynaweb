@@ -40,7 +40,7 @@ function baseContent(): SectionContent {
 
 function baseStyle(): SectionStyle {
   return {
-    paddingY: 96, minHeight: 0, align: 'start', maxWidth: 1200, background: 'bg', columns: 3,
+    paddingY: 96, minHeight: 0, align: 'start', maxWidth: 1200, background: 'bg', columns: 3, variant: 'standard',
     hidden: { desktop: false, tablet: false, mobile: false },
   };
 }

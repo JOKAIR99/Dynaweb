@@ -1,5 +1,6 @@
 import type { Command } from '../../model/commands';
 import type { Section, SectionStyle } from '../../model/schema';
+import { SECTION_VARIANTS, VARIANT_LABELS } from '../../model/schema';
 import { Select, Slider, TextInput, Toggle } from '../controls';
 
 interface Props { pageId: string; section: Section; dispatch: (c: Command) => void }
@@ -65,8 +66,19 @@ export function ContentPanel({ pageId, section, dispatch }: Props) {
 export function StylePanel({ pageId, section, dispatch }: Props) {
   const s = section.style;
   const set = (patch: Partial<SectionStyle>) => dispatch({ kind: 'updateStyle', pageId, sectionId: section.id, patch });
+  const variants = SECTION_VARIANTS[section.type] as readonly string[];
+  const horizontal = section.animations.some((a) => a.type === 'horizontal' && a.enabled);
   return (
     <div className="ed-stack">
+      <div className="ed-field" role="group" aria-label="Layout">
+        <span className="ed-label">Layout</span>
+        <div className="ed-row ed-wrap">
+          {variants.map((v) => (
+            <button key={v} type="button" aria-pressed={s.variant === v} onClick={() => set({ variant: v })}>{VARIANT_LABELS[v] ?? v}</button>
+          ))}
+        </div>
+        {horizontal && <span className="ed-hint">Horizontal scroll is on, so it controls this gallery's layout on larger screens.</span>}
+      </div>
       <Select label="Background" value={s.background} options={[{ value: 'bg', label: 'Page' }, { value: 'surface', label: 'Surface' }, { value: 'accent', label: 'Accent' }, { value: 'text', label: 'Inverted' }]} onChange={(v) => set({ background: v })} />
       <Select label="Alignment" value={s.align} options={['start', 'center', 'end'] as const} onChange={(v) => set({ align: v })} />
       <Slider label="Vertical padding" value={s.paddingY} min={0} max={320} step={4} unit="px" onChange={(v) => set({ paddingY: v })} />
