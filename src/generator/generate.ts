@@ -13,6 +13,19 @@ export interface GenerateInput {
   motionIntensity: 0 | 1 | 2;
 }
 
+/**
+ * Each preset composes pages differently, not just with different colours.
+ * Types not listed use the standard layout.
+ */
+export const PRESET_LAYOUTS: Record<string, Partial<Record<SectionType, string>>> = {
+  lagoon: { hero: 'fullbleed', services: 'asymmetric', features: 'asymmetric', gallery: 'masonry', cta: 'split' },
+  ledger: { hero: 'editorial', about: 'editorial', services: 'list', features: 'list', testimonials: 'spotlight', pricing: 'list', footer: 'stacked' },
+  nocturne: { hero: 'fullbleed', about: 'reversed', services: 'list', features: 'list', gallery: 'filmstrip', testimonials: 'spotlight', cta: 'split', contact: 'centered' },
+  kiosk: { hero: 'split', services: 'asymmetric', features: 'asymmetric', gallery: 'masonry', navigation: 'centered' },
+  quarry: { hero: 'split', about: 'reversed', services: 'list', features: 'list', pricing: 'list', contact: 'centered' },
+  canopy: { hero: 'editorial', about: 'reversed', gallery: 'masonry', testimonials: 'spotlight', footer: 'stacked' },
+};
+
 const has = (text: string, ...words: string[]) => words.some((w) => text.includes(w));
 
 /**
@@ -127,7 +140,8 @@ export function generateProject(input: GenerateInput, ids: IdGenerator, now: str
         section = withContent(section, { heading: name, body: meta.location ? `${meta.location}. ${ph('Contact details')}` : section.content.body });
         break;
     }
-    return { ...section, animations: animationsFor(type, meta, input.motionIntensity, ids) };
+    const variant = PRESET_LAYOUTS[input.presetId]?.[type] ?? 'standard';
+    return { ...section, style: { ...section.style, variant }, animations: animationsFor(type, meta, input.motionIntensity, ids) };
   });
 
   return {

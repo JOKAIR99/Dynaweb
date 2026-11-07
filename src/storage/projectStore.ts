@@ -44,6 +44,18 @@ const MIGRATIONS: Record<number, Migration> = {
       })),
     };
   },
+  // v2 -> v3: layout variants. Existing sections keep their look ("standard").
+  2: (raw) => ({
+    ...raw,
+    schemaVersion: 3,
+    pages: (Array.isArray(raw.pages) ? raw.pages : []).map((page: Record<string, unknown>) => ({
+      ...page,
+      sections: (Array.isArray(page.sections) ? page.sections : []).map((sec: Record<string, unknown>) => ({
+        ...sec,
+        style: { variant: 'standard', ...(sec.style as Record<string, unknown>) },
+      })),
+    })),
+  }),
 };
 
 export function migrate(raw: Record<string, unknown>): Record<string, unknown> {
