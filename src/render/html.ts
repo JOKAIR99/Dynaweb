@@ -1,5 +1,6 @@
 import type { Animation, Project, Section } from '../model/schema';
 import { EDITOR_CSS, siteCss } from './css';
+import { headTags } from './seo';
 
 export function esc(value: string): string {
   return value.replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch] as string);
@@ -69,6 +70,7 @@ function sectionBody(section: Section): string {
     case 'about':
       return `<div class="dw-grid"><div><h2>${esc(c.heading)}</h2>${para(c.subheading, 'dw-lead')}${para(c.body, 'dw-muted')}${actions(section)}</div>${media(c.imageUrl, c.heading)}</div>`;
     case 'features':
+    case 'services':
       return `<h2>${esc(c.heading)}</h2>${para(c.subheading, 'dw-lead dw-muted')}<div class="dw-grid">${c.items
         .map((i) => `<article class="dw-card">${safeImage(i.imageUrl) ? media(i.imageUrl, i.title) : ''}<h3>${esc(i.title)}</h3>${para(i.text, 'dw-muted')}</article>`).join('')}</div>`;
     case 'gallery': {
@@ -77,6 +79,14 @@ function sectionBody(section: Section): string {
       if (!horizontal) return `<h2>${esc(c.heading)}</h2><div class="dw-grid">${panels}</div>`;
       return `<div class="dw-h-sticky"><div class="dw-inner"><h2>${esc(c.heading)}</h2></div><div class="dw-h-track">${panels}</div><div class="dw-h-progress" aria-hidden="true"><span></span></div><div class="dw-h-dots" aria-hidden="true">${c.items.map(() => '<i></i>').join('')}</div></div>`;
     }
+    case 'testimonials':
+      return `<h2>${esc(c.heading)}</h2>${para(c.subheading, 'dw-muted')}<div class="dw-grid">${c.items
+        .map((i) => `<figure class="dw-card dw-quote"><blockquote>${para(i.text, 'dw-lead')}</blockquote><figcaption>${esc(i.title)}</figcaption></figure>`).join('')}</div>`;
+    case 'pricing':
+      return `<h2>${esc(c.heading)}</h2>${para(c.subheading, 'dw-lead dw-muted')}<div class="dw-grid">${c.items
+        .map((i) => `<article class="dw-card dw-price"><h3>${esc(i.title)}</h3>${para(i.text)}</article>`).join('')}</div>${actions(section)}`;
+    case 'contact':
+      return `<div class="dw-grid"><div><h2>${esc(c.heading)}</h2>${para(c.subheading, 'dw-lead')}${para(c.body, 'dw-muted')}</div>${contactForm(section)}</div>`;
     case 'cta':
       return `<h2>${esc(c.heading)}</h2>${para(c.subheading, 'dw-lead')}${actions(section)}`;
     case 'footer':
@@ -85,10 +95,47 @@ function sectionBody(section: Section): string {
 }
 
 const TAGS: Record<Section['type'], string> = {
-  navigation: 'header', hero: 'section', about: 'section', features: 'section', gallery: 'section', cta: 'section', footer: 'footer',
+  navigation: 'header', hero: 'section', about: 'section', features: 'section', services: 'section', gallery: 'section',
+  testimonials: 'section', pricing: 'section', cta: 'section', contact: 'section', footer: 'footer',
 };
 
-export function renderSection(section: Section): string {
+/** Only https endpoints may receive form data. */
+export function safeEndpoint(url: string): string | null {
+  return /^https:\/\/[^\s"'<>]+$/.test(url.trim()) ? url.trim() : null;
+}
+
+/**
+ * Contact or booking form. It submits for real when an https endpoint is set
+ * (plain POST without JavaScript, fetch with inline feedback with it). With no
+ * endpoint it says it is not connected; it never pretends a message was sent
+ * or a booking confirmed.
+ */
+function contactForm(section: Section): string {
+  const c = section.content;
+  const endpoint = safeEndpoint(c.formEndpoint);
+  const id = (name: string) => `${section.id}-${name}`;
+  const field = (name: string, label: string, input: string) =>
+    `<div class="dw-field"><label for="${id(name)}">${label}</label>${input}<p class="dw-error" id="${id(name)}-err" aria-live="polite"></p></div>`;
+  const attrs = (name: string, extra: string) => `id="${id(name)}" name="${name}" aria-describedby="${id(name)}-err" ${extra}`;
+  const booking = c.formKind === 'booking'
+    ? field('date', 'Preferred date', `<input type="date" ${attrs('date', 'required')}>`) +
+      field('guests', 'Number of guests', `<input type="number" inputmode="numeric" min="1" max="99" value="2" ${attrs('guests', 'required')}>`)
+    : '';
+  const action = endpoint ? ` action="${esc(endpoint)}" method="post"` : '';
+  const submit = c.formKind === 'booking' ? 'Send booking request' : 'Send message';
+  const note = endpoint
+    ? (c.formKind === 'booking' ? '<p class="dw-muted dw-small">This is a request, not a confirmed booking. We reply to confirm availability.</p>' : '')
+    : '<p class="dw-muted dw-small" data-dw-offline>This form is not connected yet: messages cannot be sent from this page.</p>';
+  return `<form class="dw-form" novalidate data-dw-form="${c.formKind}"${endpoint ? ` data-dw-endpoint="${esc(endpoint)}"` : ''}${action}>` +
+    field('name', 'Name', `<input type="text" autocomplete="name" maxlength="120" ${attrs('name', 'required')}>`) +
+    field('email', 'Email', `<input type="email" autocomplete="email" maxlength="200" ${attrs('email', 'required')}>`) +
+    booking +
+    field('message', c.formKind === 'booking' ? 'Anything we should know' : 'Message', `<textarea rows="4" maxlength="4000" ${attrs('message', c.formKind === 'booking' ? '' : 'required')}></textarea>`) +
+    `<div class="dw-hp" aria-hidden="true"><label>Leave empty<input type="text" name="company_website" tabindex="-1" autocomplete="off"></label></div>` +
+    `<button type="submit" class="dw-btn">${submit}</button><p class="dw-form-status" role="status" aria-live="polite"></p>${note}</form>`;
+}
+
+export function renderSection(section: Section, anchor: string = section.type): string {
   const st = section.style;
   const classes = [
     'dw-section', `dw-${section.type === 'navigation' ? 'nav' : section.type}`, `dw-bg-${st.background}`, `dw-align-${st.align}`,
@@ -102,7 +149,6 @@ export function renderSection(section: Section): string {
     horizontal?.type === 'horizontal' ? `--dw-h-panel:${horizontal.settings.panelWidth}vw;--dw-h-gap:${horizontal.settings.gap}px` : '',
   ].filter(Boolean).join(';');
   const tag = TAGS[section.type];
-  const anchor = section.type === 'cta' ? 'contact' : section.type;
   const body = sectionBody(section);
   const inner = section.type === 'gallery' && horizontal ? body : `<div class="dw-inner">${body}</div>`;
   return `<${tag} id="${esc(anchor)}" class="${classes.join(' ')}" style="${style}" data-dw-id="${esc(section.id)}" data-dw-name="${esc(section.name)}"${animAttrs(section.animations)}>${parallaxLayers(section)}${inner}</${tag}>`;
@@ -125,11 +171,24 @@ export function countPlaceholders(project: Project): number {
   return n;
 }
 
+/**
+ * Unique, readable anchors: the first section of a type gets the type name
+ * (so nav links like #contact work); later ones get a numbered suffix.
+ * Older projects without a contact section keep #contact on their call to action.
+ */
+export function anchorFor(sections: Section[], index: number): string {
+  const hasContact = sections.some((x) => x.type === 'contact');
+  const baseOf = (x: Section) => (x.type === 'cta' && !hasContact ? 'contact' : x.type === 'navigation' ? 'top' : x.type);
+  const base = baseOf(sections[index]);
+  const earlier = sections.slice(0, index).filter((x) => baseOf(x) === base).length;
+  return earlier === 0 ? base : `${base}-${earlier + 1}`;
+}
+
 export function renderPage(project: Project, opts: RenderOptions): string {
   const page = project.pages.find((p) => p.id === opts.pageId) ?? project.pages[0];
   const t = project.theme;
   const editor = opts.mode === 'editor';
-  const body = page.sections.map(renderSection).join('\n');
+  const body = page.sections.map((s, i) => renderSection(s, anchorFor(page.sections, i))).join('\n');
   const editorBits = editor
     ? `<style>${EDITOR_CSS}</style><script>
 document.addEventListener('click', function (e) {
@@ -149,14 +208,13 @@ if (sel) { var s = document.querySelector('[data-dw-id="' + sel + '"]'); if (s) 
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(project.name)}</title>
-<meta name="description" content="${esc(project.meta.objective || project.name)}">
+${headTags(project, page)}
 <meta name="generator" content="Dynaweb Studio">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="${esc(t.fonts.googleFontsHref)}">
 <style>${siteCss(t)}</style>
 </head>
-<body data-dw-motion="${t.motion}">
+<body data-dw-motion="${t.motion}"${t.interactions.magneticButtons ? ' data-dw-magnetic' : ''}${t.interactions.cardHover ? ' class="dw-hover"' : ''}>
 ${body}
 <script>${opts.runtimeJs}</script>
 ${editorBits}

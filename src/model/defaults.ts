@@ -35,7 +35,7 @@ export function createAnimation(type: AnimationType, ids: IdGenerator): Animatio
 const emptyLink = { label: '', href: '' };
 
 function baseContent(): SectionContent {
-  return { heading: '', subheading: '', body: '', imageUrl: '', primaryAction: emptyLink, secondaryAction: emptyLink, items: [] };
+  return { heading: '', subheading: '', body: '', imageUrl: '', primaryAction: emptyLink, secondaryAction: emptyLink, items: [], formKind: 'inquiry', formEndpoint: '' };
 }
 
 function baseStyle(): SectionStyle {
@@ -47,7 +47,8 @@ function baseStyle(): SectionStyle {
 
 export const SECTION_LABELS: Record<SectionType, string> = {
   navigation: 'Navigation', hero: 'Hero', about: 'About', features: 'Features',
-  gallery: 'Gallery', cta: 'Call to action', footer: 'Footer',
+  services: 'Services', gallery: 'Gallery', testimonials: 'Testimonials', pricing: 'Pricing',
+  cta: 'Call to action', contact: 'Contact', footer: 'Footer',
 };
 
 /** Creates a section of the given type with placeholder content only. */
@@ -78,6 +79,38 @@ export function createSection(type: SectionType, ids: IdGenerator): Section {
         heading: ph('What you offer'),
         items: [item(ph('Offer one'), ph('Short description')), item(ph('Offer two'), ph('Short description')), item(ph('Offer three'), ph('Short description'))],
       });
+      break;
+    case 'services':
+      Object.assign(content, {
+        heading: ph('Services heading'),
+        items: [1, 2, 3].map((n) => item(ph(`Service ${n}`), ph('What it includes and who it is for'))),
+      });
+      Object.assign(style, { background: 'surface' });
+      break;
+    case 'testimonials':
+      // Never invented: real quotes only, published with the customer's permission.
+      Object.assign(content, {
+        heading: ph('What guests say'),
+        subheading: ph('Only publish real reviews, with permission'),
+        items: [1, 2].map((n) => item(ph(`Customer ${n} name`), ph('Real quote from a customer'))),
+      });
+      Object.assign(style, { columns: 2 });
+      break;
+    case 'pricing':
+      Object.assign(content, {
+        heading: ph('Prices'),
+        items: [1, 2, 3].map((n) => item(ph(`Option ${n}`), ph('Price and what is included'))),
+      });
+      break;
+    case 'contact':
+      Object.assign(content, {
+        heading: ph('Contact heading'),
+        subheading: ph('How and when you reply'),
+        body: ph('Address, phone, email'),
+        formKind: 'inquiry',
+        formEndpoint: '',
+      });
+      Object.assign(style, { columns: 2 });
       break;
     case 'gallery':
       Object.assign(content, {

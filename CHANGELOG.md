@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- Brief engine (project file format version 2, older files migrate automatically): sector, location, visual atmosphere, primary objective, languages, visual references and public address.
+- Art direction step: three design proposals ranked against the brief, each with its own character and reasoning, plus the shared layout, imagery, spacing and motion direction. Six presets (new: Quarry, Canopy).
+- Structure planner: sections chosen from sector and objective; new section types Services, Testimonials, Pricing and Contact. Placeholders only, never invented reviews or prices.
+- Working contact and booking forms: real-time validation, real submission to an https endpoint, honest "not connected" state, spam honeypot, booking requests never shown as confirmed.
+- Micro-interactions: magnetic buttons (mouse only) and card hover, with reduced-motion fallbacks.
+- SEO: Open Graph, canonical URL, JSON-LD built only from entered facts, sitemap.xml and robots.txt downloads.
+- Site tab in the editor and a "Copy AI prompt" action that fills the Dynaweb master prompt with the brief.
+- Unique section anchors (duplicated sections no longer share an id).
+
 - Structured site model (projects, pages, sections, animations) with Zod validation and a versioned, migratable project store.
 - Command-based editing: every change is validated and immutable, with undo and redo.
 - Creation wizard: project facts, design brief, four original design presets, animation intensity.

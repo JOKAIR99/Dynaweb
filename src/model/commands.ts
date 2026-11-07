@@ -1,6 +1,6 @@
 import { projectSchema } from './schema';
 import type {
-  Animation, AnimationType, Page, Project, Section, SectionContent, SectionStyle, SectionType, Theme,
+  Animation, AnimationType, Page, Project, ProjectMeta, Section, SectionContent, SectionStyle, SectionType, Theme,
 } from './schema';
 import { createAnimation, createSection } from './defaults';
 import type { IdGenerator } from './ids';
@@ -13,6 +13,7 @@ import type { IdGenerator } from './ids';
  */
 export type Command =
   | { kind: 'renameProject'; name: string }
+  | { kind: 'updateMeta'; patch: Partial<ProjectMeta> }
   | { kind: 'addSection'; pageId: string; sectionType: SectionType; index?: number }
   | { kind: 'removeSection'; pageId: string; sectionId: string }
   | { kind: 'duplicateSection'; pageId: string; sectionId: string }
@@ -72,6 +73,13 @@ function reduce(project: Project, cmd: Command, ids: IdGenerator): Project {
   switch (cmd.kind) {
     case 'renameProject':
       return { ...project, name: cmd.name };
+
+    case 'updateMeta': {
+      const meta = { ...project.meta, ...cmd.patch };
+      // Keep the primary language first in the language list.
+      const languages = [meta.language, ...meta.languages.filter((l) => l !== meta.language)];
+      return { ...project, meta: { ...meta, languages } };
+    }
 
     case 'addSection':
       return mapPage(project, cmd.pageId, (page) => {

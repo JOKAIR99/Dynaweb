@@ -10,12 +10,13 @@ import { useProject } from './useProject';
 import { ContentPanel, StylePanel } from './panels/Inspector';
 import { AnimationPanel } from './panels/AnimationPanel';
 import { ThemePanel } from './panels/ThemePanel';
+import { SitePanel } from './panels/SitePanel';
 import { download, exportHtml, slugify } from './exportSite';
 
 const DEVICES = { desktop: 1280, tablet: 820, mobile: 390 } as const;
 const DEVICE_HEIGHTS = { desktop: 800, tablet: 1180, mobile: 844 } as const;
 type Device = keyof typeof DEVICES;
-type Tab = 'content' | 'style' | 'animation' | 'theme';
+type Tab = 'content' | 'style' | 'animation' | 'theme' | 'site';
 
 interface Props { initial: Project; store: ProjectStore; onClose: () => void }
 
@@ -175,13 +176,14 @@ export function Editor({ initial, store, onClose }: Props) {
 
       <aside className="ed-right" aria-label="Inspector">
         <div className="ed-tabs" role="tablist">
-          {(['content', 'style', 'animation', 'theme'] as const).map((t) => (
+          {(['content', 'style', 'animation', 'theme', 'site'] as const).map((t) => (
             <button key={t} type="button" role="tab" aria-selected={tab === t} onClick={() => setTab(t)}>{t[0].toUpperCase() + t.slice(1)}</button>
           ))}
         </div>
         <div className="ed-panel">
           {tab === 'theme' && <ThemePanel theme={project.theme} dispatch={dispatch} />}
-          {tab !== 'theme' && !section && <p className="ed-empty">Select a section on the canvas or in the list.</p>}
+          {tab === 'site' && <SitePanel project={project} dispatch={dispatch} />}
+          {tab !== 'theme' && tab !== 'site' && !section && <p className="ed-empty">Select a section on the canvas or in the list.</p>}
           {tab === 'content' && section && <ContentPanel pageId={page.id} section={section} dispatch={dispatch} />}
           {tab === 'style' && section && <StylePanel pageId={page.id} section={section} dispatch={dispatch} />}
           {tab === 'animation' && section && (

@@ -7,7 +7,7 @@ import { z } from 'zod';
  * always derived, never stored.
  */
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 const idSchema = z.string().regex(/^[a-z]+_[a-z0-9]+$/, 'invalid id');
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'expected #rrggbb');
@@ -74,7 +74,9 @@ export const animationSchema = z.discriminatedUnion('type', [
 
 // ---------- Sections ----------
 
-export const SECTION_TYPES = ['navigation', 'hero', 'about', 'features', 'gallery', 'cta', 'footer'] as const;
+export const SECTION_TYPES = [
+  'navigation', 'hero', 'about', 'features', 'services', 'gallery', 'testimonials', 'pricing', 'cta', 'contact', 'footer',
+] as const;
 export const sectionTypeSchema = z.enum(SECTION_TYPES);
 
 const itemSchema = z.object({
@@ -94,6 +96,9 @@ export const sectionContentSchema = z.object({
   primaryAction: linkSchema,
   secondaryAction: linkSchema,
   items: z.array(itemSchema).max(24),
+  /** Contact / booking form. An empty endpoint means "not connected": the form says so instead of faking success. */
+  formKind: z.enum(['inquiry', 'booking']),
+  formEndpoint: z.string().max(500),
 });
 
 export const sectionStyleSchema = z.object({
@@ -137,17 +142,33 @@ export const themeSchema = z.object({
   radius: z.number().int().min(0).max(40),
   scale: z.number().min(1.1).max(1.6), // type scale ratio
   motion: z.enum(['none', 'subtle', 'expressive']),
+  interactions: z.object({ magneticButtons: z.boolean(), cardHover: z.boolean() }),
 });
 
 // ---------- Project ----------
 
+export const SECTORS = ['tourism', 'hotel', 'restaurant', 'other'] as const;
+export const ATMOSPHERES = ['minimalist', 'luxury', 'modern', 'natural', 'editorial', 'other'] as const;
+export const GOALS = ['bookings', 'sales', 'leads', 'information', 'branding'] as const;
+const langCode = z.string().regex(/^[a-z]{2,3}(-[A-Za-z]{2})?$/, 'expected a language code such as en or fr');
+
 export const projectMetaSchema = z.object({
   businessType: z.string().max(120),
   industry: z.string().max(120),
+  sector: z.enum(SECTORS),
+  location: z.string().max(200),
+  atmosphere: z.enum(ATMOSPHERES),
   audience: z.string().max(300),
-  language: z.string().min(2).max(12),
+  goal: z.enum(GOALS),
   objective: z.string().max(500),
+  /** Primary language (html lang). */
+  language: langCode,
+  /** All languages the site should exist in; the first is the primary. Translation arrives with multi-page sites. */
+  languages: z.array(langCode).min(1).max(12),
+  references: z.string().max(2000),
   brief: z.string().max(4000),
+  /** Public site address, used for canonical URL, Open Graph and sitemap. Empty until the owner knows it. */
+  siteUrl: z.string().max(300).regex(/^(https:\/\/[^\s]+)?$/, 'expected an https:// address or nothing'),
 });
 
 export const pageSchema = z.object({
@@ -182,6 +203,9 @@ export type SectionContent = z.infer<typeof sectionContentSchema>;
 export type SectionStyle = z.infer<typeof sectionStyleSchema>;
 export type Section = z.infer<typeof sectionSchema>;
 export type Theme = z.infer<typeof themeSchema>;
+export type Sector = (typeof SECTORS)[number];
+export type Atmosphere = (typeof ATMOSPHERES)[number];
+export type Goal = (typeof GOALS)[number];
 export type ProjectMeta = z.infer<typeof projectMetaSchema>;
 export type Page = z.infer<typeof pageSchema>;
 export type Project = z.infer<typeof projectSchema>;

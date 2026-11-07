@@ -64,6 +64,7 @@
     this.frame = 0;
     this.snapTimer = 0;
     this.active = false;
+    this.listeners = [];
     var self = this;
     this.onScroll = function () { self.schedule(); };
     this.onResize = function () { self.measure(); self.schedule(); };
@@ -79,10 +80,18 @@
     return !!(mq && mq.matches) || (this.doc.body && this.doc.body.getAttribute('data-dw-motion') === 'none');
   };
 
+  /** Adds an event listener that destroy() removes. */
+  Runtime.prototype.on = function (el, type, fn, opts) {
+    el.addEventListener(type, fn, opts);
+    this.listeners.push([el, type, fn, opts]);
+  };
+
   Runtime.prototype.init = function () {
-    if (this.active) this.destroy();
+    if (this.active || this.listeners.length) this.destroy();
+    this.initForms(); // forms work regardless of motion preferences
     if (this.reducedMotion()) return this;
     this.active = true;
+    this.initMagnetic();
     this.doc.documentElement.classList.add('dw-js');
     this.initReveal();
     this.initParallax();
@@ -244,6 +253,99 @@
     });
   };
 
+  // ---------- Forms ----------
+  var FORM_TEXT = {
+    missing: 'Please fill in this field.',
+    email: 'Enter a valid email address, for example name@example.com.',
+    range: function (el) { return 'Enter a number between ' + el.min + ' and ' + el.max + '.'; },
+    past: 'Choose a date from today onwards.',
+    offline: 'This form is not connected yet, so nothing was sent. Please use the contact details on this page.',
+    sending: 'Sending...',
+    sent: { inquiry: 'Thank you. Your message was sent.', booking: 'Request sent. This is not a confirmed booking yet: you will receive a reply about availability.' },
+    failed: 'Sending failed. Please try again, or use the contact details on this page.'
+  };
+
+  function todayIso(win) {
+    var d = new win.Date();
+    return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+  }
+
+  /** Returns an error message for a field, or '' when it is valid. */
+  Runtime.prototype.fieldError = function (el) {
+    if (el.type === 'date' && el.value && el.value < todayIso(this.win)) return FORM_TEXT.past;
+    var v = el.validity;
+    if (!v || v.valid) return '';
+    if (v.valueMissing) return FORM_TEXT.missing;
+    if (v.typeMismatch && el.type === 'email') return FORM_TEXT.email;
+    if (v.rangeUnderflow || v.rangeOverflow || v.badInput) return FORM_TEXT.range(el);
+    return el.validationMessage || FORM_TEXT.missing;
+  };
+
+  Runtime.prototype.showFieldError = function (el) {
+    var msg = this.fieldError(el);
+    var out = this.doc.getElementById(el.id + '-err');
+    if (out) out.textContent = msg;
+    if (msg) el.setAttribute('aria-invalid', 'true'); else el.removeAttribute('aria-invalid');
+    return !msg;
+  };
+
+  Runtime.prototype.initForms = function () {
+    var self = this;
+    Array.prototype.forEach.call(this.doc.querySelectorAll('form[data-dw-form]'), function (form) {
+      var kind = form.getAttribute('data-dw-form') === 'booking' ? 'booking' : 'inquiry';
+      var endpoint = form.getAttribute('data-dw-endpoint');
+      var status = form.querySelector('.dw-form-status');
+      var button = form.querySelector('button[type="submit"]');
+      var fields = Array.prototype.slice.call(form.querySelectorAll('input[id], textarea[id]'));
+      var dateField = form.querySelector('input[type="date"]');
+      if (dateField) dateField.min = todayIso(self.win);
+      // Real-time validation: after a field has been left once, re-check on every keystroke.
+      fields.forEach(function (el) {
+        self.on(el, 'blur', function () { el.setAttribute('data-dw-touched', ''); self.showFieldError(el); });
+        self.on(el, 'input', function () { if (el.hasAttribute('data-dw-touched')) self.showFieldError(el); });
+      });
+      self.on(form, 'submit', function (e) {
+        e.preventDefault();
+        var firstBad = null;
+        fields.forEach(function (el) { el.setAttribute('data-dw-touched', ''); if (!self.showFieldError(el) && !firstBad) firstBad = el; });
+        if (firstBad) { firstBad.focus(); return; }
+        var trap = form.querySelector('input[name="company_website"]');
+        if (trap && trap.value) return; // bot: drop silently, never show a fake success
+        if (!endpoint) { status.textContent = FORM_TEXT.offline; return; }
+        button.disabled = true;
+        status.textContent = FORM_TEXT.sending;
+        self.win.fetch(endpoint, { method: 'POST', body: new self.win.FormData(form), headers: { Accept: 'application/json' } })
+          .then(function (res) {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            status.textContent = FORM_TEXT.sent[kind];
+            form.reset();
+            fields.forEach(function (el) { el.removeAttribute('data-dw-touched'); el.removeAttribute('aria-invalid'); });
+          })
+          .catch(function () { status.textContent = FORM_TEXT.failed; })
+          .then(function () { button.disabled = false; });
+      });
+    });
+  };
+
+  // ---------- Magnetic buttons ----------
+  Runtime.prototype.initMagnetic = function () {
+    var self = this;
+    if (!this.doc.body || !this.doc.body.hasAttribute('data-dw-magnetic')) return;
+    var fine = this.win.matchMedia && this.win.matchMedia('(hover: hover) and (pointer: fine)');
+    if (!fine || !fine.matches) return; // touch screens: no cursor effects
+    Array.prototype.forEach.call(this.doc.querySelectorAll('.dw-btn'), function (btn) {
+      btn.classList.add('dw-magnet');
+      self.touched.push({ el: btn, cls: 'dw-magnet', vars: [] });
+      self.on(btn, 'pointermove', function (e) {
+        var r = btn.getBoundingClientRect();
+        var x = (e.clientX - (r.left + r.width / 2)) * 0.25;
+        var y = (e.clientY - (r.top + r.height / 2)) * 0.35;
+        btn.style.transform = 'translate3d(' + clamp(x, -12, 12).toFixed(1) + 'px,' + clamp(y, -8, 8).toFixed(1) + 'px,0)';
+      });
+      self.on(btn, 'pointerleave', function () { btn.style.transform = ''; });
+    });
+  };
+
   // ---------- Frame loop ----------
   Runtime.prototype.schedule = function () {
     if (this.frame || !this.active) return;
@@ -264,8 +366,11 @@
     if (this.frame) this.win.cancelAnimationFrame(this.frame);
     this.win.clearTimeout(this.snapTimer);
     this.observers.forEach(function (io) { io.disconnect(); });
+    this.listeners.forEach(function (l) { l[0].removeEventListener(l[1], l[2], l[3]); });
+    this.listeners = [];
     this.touched.forEach(function (t) {
       t.el.classList.remove(t.cls, 'dw-in');
+      if (t.cls === 'dw-magnet') t.el.style.transform = '';
       t.vars.forEach(function (v) { t.el.style.removeProperty(v); });
     });
     this.parallax.forEach(function (p) { p.layers.forEach(function (l) { l.el.style.transform = ''; }); p.section.style.perspective = ''; });

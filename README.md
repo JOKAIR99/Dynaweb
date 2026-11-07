@@ -48,9 +48,12 @@ All three respect `prefers-reduced-motion`, keep content visible without JavaScr
 - **Creation wizard:** website name, business type, industry, audience, language, objective, a free-text brief, a choice of four original design presets, and animation intensity. Words in the brief such as *parallax*, *cinematic* or *horizontal gallery* switch on the matching animations.
 - **Visual editor:** section list with drag-and-drop reordering, duplicate and delete; a section library; a live canvas where you click a section to select it; desktop, tablet and mobile preview; zoom; undo and redo.
 - **Inspector:** content (headings, text, buttons, images, items), style (background, alignment, spacing, width, columns, per-device visibility), animation designers, and theme (presets, fonts, colours, radius, type scale, motion level).
+- **Brief engine and art direction:** sector, location, atmosphere, objective, languages, references and site address drive three ranked design proposals and the section structure (services, testimonials, pricing, contact only when the business needs them).
+- **Working forms:** contact and booking forms with real-time validation that post to any https form endpoint, and say honestly when no endpoint is connected. Booking requests are never shown as confirmed.
+- **SEO:** Open Graph, canonical URL, JSON-LD from real facts only, sitemap.xml and robots.txt.
 - **Export:** one standalone HTML file with its CSS and the animation runtime inlined. Projects save automatically in the browser and can be saved and opened as `.dynaweb.json` files.
 
-*Planned:* the AI design assistant, more section types, multi-page sites, an assets panel, ZIP export and publishing. See the [roadmap](ROADMAP.md).
+*Planned:* the built-in AI design assistant (today: "Copy AI prompt" in the Site tab), more section types, multi-page sites, an assets panel, ZIP export and publishing. See the [roadmap](ROADMAP.md).
 
 ## Quick start
 

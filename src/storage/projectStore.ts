@@ -19,7 +19,32 @@ const projectKey = (id: string) => `dynaweb:project:${id}`;
 
 type Migration = (raw: Record<string, unknown>) => Record<string, unknown>;
 /** migrations[n] upgrades a project from schemaVersion n to n + 1. */
-const MIGRATIONS: Record<number, Migration> = {};
+const MIGRATIONS: Record<number, Migration> = {
+  // v1 -> v2: structured brief fields, form settings on sections, micro-interaction settings.
+  1: (raw) => {
+    const meta = (raw.meta ?? {}) as Record<string, unknown>;
+    const theme = (raw.theme ?? {}) as Record<string, unknown>;
+    const language = typeof meta.language === 'string' ? meta.language : 'en';
+    const pages = Array.isArray(raw.pages) ? raw.pages : [];
+    return {
+      ...raw,
+      schemaVersion: 2,
+      meta: {
+        sector: 'other', location: '', atmosphere: 'other', goal: 'information',
+        languages: [language], references: '', siteUrl: '',
+        ...meta,
+      },
+      theme: { interactions: { magneticButtons: false, cardHover: true }, ...theme },
+      pages: pages.map((page: Record<string, unknown>) => ({
+        ...page,
+        sections: (Array.isArray(page.sections) ? page.sections : []).map((sec: Record<string, unknown>) => ({
+          ...sec,
+          content: { formKind: 'inquiry', formEndpoint: '', ...(sec.content as Record<string, unknown>) },
+        })),
+      })),
+    };
+  },
+};
 
 export function migrate(raw: Record<string, unknown>): Record<string, unknown> {
   let current = raw;
