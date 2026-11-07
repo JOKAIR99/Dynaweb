@@ -75,7 +75,8 @@ export const animationSchema = z.discriminatedUnion('type', [
 // ---------- Sections ----------
 
 export const SECTION_TYPES = [
-  'navigation', 'hero', 'about', 'features', 'services', 'gallery', 'testimonials', 'pricing', 'cta', 'contact', 'footer',
+  'navigation', 'hero', 'about', 'statistics', 'features', 'services', 'showcase', 'gallery', 'team', 'testimonials',
+  'pricing', 'cta', 'contact', 'footer',
 ] as const;
 export const sectionTypeSchema = z.enum(SECTION_TYPES);
 
@@ -124,6 +125,9 @@ export const SECTION_VARIANTS = {
   about: ['standard', 'reversed', 'editorial'],
   features: ['standard', 'list', 'asymmetric'],
   services: ['standard', 'list', 'asymmetric'],
+  statistics: ['standard', 'band'],
+  showcase: ['standard', 'grid'],
+  team: ['standard', 'list'],
   gallery: ['standard', 'masonry', 'filmstrip'],
   testimonials: ['standard', 'spotlight'],
   pricing: ['standard', 'list'],
@@ -135,7 +139,7 @@ export const SECTION_VARIANTS = {
 export const VARIANT_LABELS: Record<string, string> = {
   standard: 'Standard', centered: 'Centred', split: 'Split with image', fullbleed: 'Full-bleed image',
   editorial: 'Editorial', reversed: 'Image first', list: 'Numbered list', asymmetric: 'Featured first',
-  masonry: 'Masonry', filmstrip: 'Filmstrip', spotlight: 'Spotlight quote', stacked: 'Stacked',
+  masonry: 'Masonry', band: 'Accent band', grid: 'Product grid', filmstrip: 'Filmstrip', spotlight: 'Spotlight quote', stacked: 'Stacked',
 };
 
 export const sectionSchema = z.object({

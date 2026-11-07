@@ -90,6 +90,15 @@ function sectionBody(section: Section): string {
       if (!horizontal) return `<h2>${esc(c.heading)}</h2><div class="dw-grid">${panels}</div>`;
       return `<div class="dw-h-sticky"><div class="dw-inner"><h2>${esc(c.heading)}</h2></div><div class="dw-h-track">${panels}</div><div class="dw-h-progress" aria-hidden="true"><span></span></div><div class="dw-h-dots" aria-hidden="true">${c.items.map(() => '<i></i>').join('')}</div></div>`;
     }
+    case 'statistics':
+      return `<h2 class="dw-stats-head">${esc(c.heading)}</h2><dl class="dw-grid dw-stats">${c.items
+        .map((i) => `<div class="dw-stat"><dt class="dw-muted">${esc(i.text)}</dt><dd>${esc(i.title)}</dd></div>`).join('')}</dl>`;
+    case 'showcase':
+      return `<h2>${esc(c.heading)}</h2>${para(c.subheading, 'dw-lead dw-muted')}<div class="dw-grid dw-products">${c.items
+        .map((i) => `<article class="dw-card dw-product">${media(i.imageUrl, i.title)}<div><h3>${esc(i.title)}</h3>${para(i.text, 'dw-muted')}</div></article>`).join('')}</div>${actions(section)}`;
+    case 'team':
+      return `<h2>${esc(c.heading)}</h2>${para(c.subheading, 'dw-lead dw-muted')}<ul class="dw-grid dw-team">${c.items
+        .map((i) => `<li class="dw-person">${media(i.imageUrl, i.title)}<h3>${esc(i.title)}</h3>${para(i.text, 'dw-muted')}</li>`).join('')}</ul>`;
     case 'testimonials':
       return `<h2>${esc(c.heading)}</h2>${para(c.subheading, 'dw-muted')}<div class="dw-grid">${c.items
         .map((i) => `<figure class="dw-card dw-quote"><blockquote>${para(i.text, 'dw-lead')}</blockquote><figcaption>${esc(i.title)}</figcaption></figure>`).join('')}</div>`;
@@ -107,7 +116,7 @@ function sectionBody(section: Section): string {
 
 const TAGS: Record<Section['type'], string> = {
   navigation: 'header', hero: 'section', about: 'section', features: 'section', services: 'section', gallery: 'section',
-  testimonials: 'section', pricing: 'section', cta: 'section', contact: 'section', footer: 'footer',
+  testimonials: 'section', pricing: 'section', statistics: 'section', showcase: 'section', team: 'section', cta: 'section', contact: 'section', footer: 'footer',
 };
 
 /** Only https endpoints may receive form data. */

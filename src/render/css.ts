@@ -132,6 +132,37 @@ html.dw-js .dw-h-active .dw-h-dots { display: flex; gap: 0.5rem; position: absol
   .dw-hero.dw-v-editorial p { margin-left: 0; }
   .dw-hero.dw-v-editorial .dw-actions { justify-content: flex-start; }
 }
+/* Statistics, showcase, team */
+.dw-stats { margin: 0; }
+.dw-stat { display: flex; flex-direction: column-reverse; gap: 0.25rem; }
+.dw-stat dd { margin: 0; font-family: var(--dw-font-display); font-weight: var(--dw-display-weight); font-size: var(--dw-step-3); line-height: 1; color: var(--dw-accent); overflow-wrap: break-word; min-width: 0; }
+.dw-statistics.dw-v-band { background: var(--dw-accent); color: var(--dw-accent-text); }
+.dw-statistics.dw-v-band .dw-stat dd { color: inherit; }
+.dw-statistics.dw-v-band .dw-muted { color: inherit; opacity: 0.85; }
+.dw-statistics.dw-v-band .dw-stats-head { font-size: var(--dw-step-1); }
+.dw-product { padding: 0; overflow: hidden; display: grid; }
+.dw-product > div { padding: 1.25rem 1.5rem 1.5rem; }
+.dw-product .dw-media { border-radius: 0; }
+.dw-showcase.dw-v-standard .dw-products { grid-template-columns: minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3rem); }
+.dw-showcase.dw-v-standard .dw-product { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: center; background: none; }
+.dw-showcase.dw-v-standard .dw-product:nth-child(even) .dw-media { order: 2; }
+.dw-showcase.dw-v-standard .dw-product .dw-media { border-radius: var(--dw-radius); }
+.dw-team { list-style: none; padding: 0; margin: 0; }
+.dw-person .dw-media { aspect-ratio: 4 / 5; margin-bottom: 1rem; }
+.dw-person h3 { margin-bottom: 0.25rem; }
+.dw-team.dw-grid { row-gap: 2.5rem; }
+.dw-v-list .dw-team { grid-template-columns: minmax(0, 1fr); gap: 0; }
+.dw-v-list .dw-person { display: grid; grid-template-columns: 4rem minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; align-items: center; padding: 1rem 0; border-top: 1px solid var(--dw-muted); }
+.dw-v-list .dw-person .dw-media { aspect-ratio: 1; margin: 0; border-radius: 50%; }
+.dw-v-list .dw-person p { margin: 0; }
+@media (max-width: 767px) {
+  .dw-showcase.dw-v-standard .dw-product { grid-template-columns: minmax(0, 1fr); }
+  .dw-showcase.dw-v-standard .dw-product:nth-child(even) .dw-media { order: 0; }
+  .dw-v-list .dw-person { grid-template-columns: 3.5rem minmax(0, 1fr); }
+  .dw-v-list .dw-person p { grid-column: 2; }
+  .dw-stats.dw-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dw-stat dd { font-size: var(--dw-step-2); }
+}
 /* Testimonials, pricing */
 .dw-quote { margin: 0; } .dw-quote blockquote { margin: 0 0 1rem; } .dw-quote figcaption { font-weight: 600; }
 .dw-price h3 { margin-bottom: 0.75rem; }
