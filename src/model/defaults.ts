@@ -155,5 +155,5 @@ export function createSection(type: SectionType, ids: IdGenerator): Section {
       Object.assign(style, { paddingY: 48, background: 'text', columns: 2 });
       break;
   }
-  return { id: ids('sec'), type, name: SECTION_LABELS[type], content, style, animations: [] };
+  return { id: ids('sec'), type, name: SECTION_LABELS[type], content, style, animations: [], elementAnimations: [] };
 }

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import runtimeJs from '../runtime/engine.js?raw';
 import type { Project, SectionType } from '../model/schema';
-import { SECTION_TYPES } from '../model/schema';
+import { ELEMENT_KEY, SECTION_TYPES } from '../model/schema';
 import { SECTION_LABELS } from '../model/defaults';
 import { createRandomIds } from '../model/ids';
 import { countPlaceholders, renderPage } from '../render/html';
@@ -24,6 +24,7 @@ export function Editor({ initial, store, onClose }: Props) {
   const { project, dispatch, undo, redo, canUndo, canRedo, status, lastError, clearError } = useProject(initial, store);
   const [pageId, setPageId] = useState(project.pages[0].id);
   const [selectedId, setSelectedId] = useState<string | null>(project.pages[0].sections[1]?.id ?? null);
+  const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [device, setDevice] = useState<Device>('desktop');
   const [zoomChoice, setZoomChoice] = useState<number | 'fit'>('fit');
   const [canvasWidth, setCanvasWidth] = useState(1280);
@@ -49,8 +50,8 @@ export function Editor({ initial, store, onClose }: Props) {
   const section = page.sections.find((s) => s.id === selectedId) ?? null;
 
   const html = useMemo(
-    () => renderPage(project, { pageId: page.id, mode: preview ? 'export' : 'editor', selectedId, runtimeJs }),
-    [project, page.id, selectedId, preview],
+    () => renderPage(project, { pageId: page.id, mode: preview ? 'export' : 'editor', selectedId, selectedElement, runtimeJs }),
+    [project, page.id, selectedId, selectedElement, preview],
   );
 
   // Canvas -> editor: section selection.
@@ -59,7 +60,11 @@ export function Editor({ initial, store, onClose }: Props) {
       if (e.source !== frame.current?.contentWindow) return;
       const data = e.data as { source?: string; type?: string; id?: string };
       if (data?.source !== 'dynaweb-canvas') return;
-      if (data.type === 'select' && typeof data.id === 'string') setSelectedId(data.id);
+      if (data.type === 'select' && typeof data.id === 'string') {
+        setSelectedId(data.id);
+        const el = (data as { element?: unknown }).element;
+        setSelectedElement(typeof el === 'string' && ELEMENT_KEY.test(el) ? el : null);
+      }
       if (data.type === 'scroll' && typeof (data as { y?: unknown }).y === 'number') scrollY.current = (data as { y: number }).y;
     };
     window.addEventListener('message', onMessage);
@@ -137,7 +142,7 @@ export function Editor({ initial, store, onClose }: Props) {
           {page.sections.map((s, i) => (
             <li key={s.id} draggable onDragStart={() => setDragId(s.id)} onDragOver={(e) => e.preventDefault()} onDrop={() => onDrop(i)}
               className={`${s.id === selectedId ? 'is-on' : ''}${dragId === s.id ? ' is-drag' : ''}`}>
-              <button type="button" className="ed-layer-name" onClick={() => setSelectedId(s.id)}>
+              <button type="button" className="ed-layer-name" onClick={() => { setSelectedId(s.id); setSelectedElement(null); }}>
                 <span className="ed-grip" aria-hidden="true">::</span>{s.name}
                 {s.animations.filter((a) => a.enabled).map((a) => <span key={a.id} className="ed-badge">{a.type}</span>)}
               </button>
@@ -168,7 +173,7 @@ export function Editor({ initial, store, onClose }: Props) {
             title="Website preview"
             srcDoc={html}
             onLoad={restoreScroll}
-            style={{ width, height: DEVICE_HEIGHTS[device], transform: `scale(${zoom})` }}
+            style={{ width, height: DEVICE_HEIGHTS[device], transform: zoom === 1 ? undefined : `scale(${zoom})` }}
             sandbox="allow-scripts"
           />
         </div>
@@ -187,7 +192,7 @@ export function Editor({ initial, store, onClose }: Props) {
           {tab === 'content' && section && <ContentPanel pageId={page.id} section={section} dispatch={dispatch} />}
           {tab === 'style' && section && <StylePanel pageId={page.id} section={section} dispatch={dispatch} />}
           {tab === 'animation' && section && (
-            <AnimationPanel pageId={page.id} section={section} dispatch={dispatch} onReplay={() => setReplayKey((k) => k + 1)} newLayerId={() => layerIds('layer')} />
+            <AnimationPanel pageId={page.id} section={section} element={selectedElement} onClearElement={() => setSelectedElement(null)} dispatch={dispatch} onReplay={() => setReplayKey((k) => k + 1)} newLayerId={() => layerIds('layer')} />
           )}
         </div>
       </aside>

@@ -20,20 +20,32 @@ export function safeImage(url: string): string | null {
 
 const isPlaceholder = (text: string) => /^\[.*\]$/.test(text.trim());
 
-function media(url: string, alt: string): string {
+function media(url: string, alt: string, attrs = ''): string {
   const src = safeImage(url);
-  if (src) return `<div class="dw-media"><img src="${esc(src)}" alt="${esc(alt)}" loading="lazy"></div>`;
-  return `<div class="dw-media" role="img" aria-label="Image placeholder">[Image]</div>`;
+  if (src) return `<div class="dw-media"${attrs}><img src="${esc(src)}" alt="${esc(alt)}" loading="lazy"></div>`;
+  return `<div class="dw-media"${attrs} role="img" aria-label="Image placeholder">[Image]</div>`;
 }
 
-function actions(section: Section): string {
-  const links = [section.content.primaryAction, section.content.secondaryAction].filter((l) => l.label.trim() !== '');
+/** Element attributes: a stable key for selection, and the element's own reveal when it has one. */
+type ElementAttrs = (key: string) => string;
+
+function elementAttrs(section: Section): ElementAttrs {
+  const own = new Map(section.elementAnimations.filter((e) => e.enabled).map((e) => [e.element, e.settings]));
+  return (key) => {
+    const settings = own.get(key);
+    return ` data-dw-el="${esc(key)}"${settings ? ` data-dw-el-reveal="${esc(JSON.stringify(settings))}"` : ''}`;
+  };
+}
+
+function actions(section: Section, E: ElementAttrs = () => ''): string {
+  const links = ([['primary', section.content.primaryAction], ['secondary', section.content.secondaryAction]] as const)
+    .filter(([, l]) => l.label.trim() !== '');
   if (links.length === 0) return '';
-  return `<div class="dw-actions">${links.map((l) => `<a class="dw-btn" href="${esc(safeHref(l.href))}">${esc(l.label)}</a>`).join('')}</div>`;
+  return `<div class="dw-actions">${links.map(([key, l]) => `<a class="dw-btn"${E(key)} href="${esc(safeHref(l.href))}">${esc(l.label)}</a>`).join('')}</div>`;
 }
 
-function para(text: string, cls = ''): string {
-  return text.trim() ? `<p${cls ? ` class="${cls}"` : ''}>${esc(text)}</p>` : '';
+function para(text: string, cls = '', attrs = ''): string {
+  return text.trim() ? `<p${cls ? ` class="${cls}"` : ''}${attrs}>${esc(text)}</p>` : '';
 }
 
 function animAttrs(animations: Animation[]): string {
@@ -61,14 +73,15 @@ function parallaxLayers(section: Section): string {
 
 function sectionBody(section: Section): string {
   const c = section.content;
+  const E = elementAttrs(section);
   switch (section.type) {
     case 'navigation':
       return `<a class="dw-brand" href="#">${esc(c.heading)}</a><nav aria-label="Main"><ul>${c.items
         .map((i) => `<li><a href="${esc(safeHref(i.text))}">${esc(i.title)}</a></li>`).join('')}</ul></nav>`;
     case 'hero': {
-      const text = `<h1>${esc(c.heading)}</h1>${para(c.subheading, 'dw-lead dw-muted')}${actions(section)}`;
+      const text = `<h1${E('heading')}>${esc(c.heading)}</h1>${para(c.subheading, 'dw-lead dw-muted', E('subheading'))}${actions(section, E)}`;
       const v = section.style.variant;
-      if (v === 'split') return `<div class="dw-hero-text">${text}</div>${media(c.imageUrl, c.heading)}`;
+      if (v === 'split') return `<div class="dw-hero-text">${text}</div>${media(c.imageUrl, c.heading, E('image'))}`;
       if (v === 'fullbleed') {
         // With parallax on, the parallax layer already shows the image.
         const parallax = section.animations.some((a) => a.type === 'parallax' && a.enabled);
@@ -79,38 +92,38 @@ function sectionBody(section: Section): string {
       return text;
     }
     case 'about':
-      return `<div class="dw-grid"><div><h2>${esc(c.heading)}</h2>${para(c.subheading, 'dw-lead')}${para(c.body, 'dw-muted')}${actions(section)}</div>${media(c.imageUrl, c.heading)}</div>`;
+      return `<div class="dw-grid"><div><h2${E('heading')}>${esc(c.heading)}</h2>${para(c.subheading, 'dw-lead', E('subheading'))}${para(c.body, 'dw-muted', E('body'))}${actions(section, E)}</div>${media(c.imageUrl, c.heading, E('image'))}</div>`;
     case 'features':
     case 'services':
-      return `<h2>${esc(c.heading)}</h2>${para(c.subheading, 'dw-lead dw-muted')}<div class="dw-grid">${c.items
-        .map((i) => `<article class="dw-card">${safeImage(i.imageUrl) ? media(i.imageUrl, i.title) : ''}<h3>${esc(i.title)}</h3>${para(i.text, 'dw-muted')}</article>`).join('')}</div>`;
+      return `<h2${E('heading')}>${esc(c.heading)}</h2>${para(c.subheading, 'dw-lead dw-muted', E('subheading'))}<div class="dw-grid">${c.items
+        .map((i) => `<article class="dw-card"${E(`item:${i.id}`)}>${safeImage(i.imageUrl) ? media(i.imageUrl, i.title) : ''}<h3>${esc(i.title)}</h3>${para(i.text, 'dw-muted')}</article>`).join('')}</div>`;
     case 'gallery': {
       const horizontal = section.animations.some((a) => a.type === 'horizontal' && a.enabled);
-      const panels = c.items.map((i) => `<div class="dw-h-panel"><figure>${media(i.imageUrl, i.title)}${i.title ? `<figcaption class="dw-muted">${esc(i.title)}</figcaption>` : ''}</figure></div>`).join('');
-      if (!horizontal) return `<h2>${esc(c.heading)}</h2><div class="dw-grid">${panels}</div>`;
-      return `<div class="dw-h-sticky"><div class="dw-inner"><h2>${esc(c.heading)}</h2></div><div class="dw-h-track">${panels}</div><div class="dw-h-progress" aria-hidden="true"><span></span></div><div class="dw-h-dots" aria-hidden="true">${c.items.map(() => '<i></i>').join('')}</div></div>`;
+      const panels = c.items.map((i) => `<div class="dw-h-panel"${E(`item:${i.id}`)}><figure>${media(i.imageUrl, i.title)}${i.title ? `<figcaption class="dw-muted">${esc(i.title)}</figcaption>` : ''}</figure></div>`).join('');
+      if (!horizontal) return `<h2${E('heading')}>${esc(c.heading)}</h2><div class="dw-grid">${panels}</div>`;
+      return `<div class="dw-h-sticky"><div class="dw-inner"><h2${E('heading')}>${esc(c.heading)}</h2></div><div class="dw-h-track">${panels}</div><div class="dw-h-progress" aria-hidden="true"><span></span></div><div class="dw-h-dots" aria-hidden="true">${c.items.map(() => '<i></i>').join('')}</div></div>`;
     }
     case 'statistics':
-      return `<h2 class="dw-stats-head">${esc(c.heading)}</h2><dl class="dw-grid dw-stats">${c.items
-        .map((i) => `<div class="dw-stat"><dt class="dw-muted">${esc(i.text)}</dt><dd>${esc(i.title)}</dd></div>`).join('')}</dl>`;
+      return `<h2 class="dw-stats-head"${E('heading')}>${esc(c.heading)}</h2><dl class="dw-grid dw-stats">${c.items
+        .map((i) => `<div class="dw-stat"${E(`item:${i.id}`)}><dt class="dw-muted">${esc(i.text)}</dt><dd>${esc(i.title)}</dd></div>`).join('')}</dl>`;
     case 'showcase':
-      return `<h2>${esc(c.heading)}</h2>${para(c.subheading, 'dw-lead dw-muted')}<div class="dw-grid dw-products">${c.items
-        .map((i) => `<article class="dw-card dw-product">${media(i.imageUrl, i.title)}<div><h3>${esc(i.title)}</h3>${para(i.text, 'dw-muted')}</div></article>`).join('')}</div>${actions(section)}`;
+      return `<h2${E('heading')}>${esc(c.heading)}</h2>${para(c.subheading, 'dw-lead dw-muted', E('subheading'))}<div class="dw-grid dw-products">${c.items
+        .map((i) => `<article class="dw-card dw-product"${E(`item:${i.id}`)}>${media(i.imageUrl, i.title)}<div><h3>${esc(i.title)}</h3>${para(i.text, 'dw-muted')}</div></article>`).join('')}</div>${actions(section, E)}`;
     case 'team':
-      return `<h2>${esc(c.heading)}</h2>${para(c.subheading, 'dw-lead dw-muted')}<ul class="dw-grid dw-team">${c.items
-        .map((i) => `<li class="dw-person">${media(i.imageUrl, i.title)}<h3>${esc(i.title)}</h3>${para(i.text, 'dw-muted')}</li>`).join('')}</ul>`;
+      return `<h2${E('heading')}>${esc(c.heading)}</h2>${para(c.subheading, 'dw-lead dw-muted', E('subheading'))}<ul class="dw-grid dw-team">${c.items
+        .map((i) => `<li class="dw-person"${E(`item:${i.id}`)}>${media(i.imageUrl, i.title)}<h3>${esc(i.title)}</h3>${para(i.text, 'dw-muted')}</li>`).join('')}</ul>`;
     case 'testimonials':
-      return `<h2>${esc(c.heading)}</h2>${para(c.subheading, 'dw-muted')}<div class="dw-grid">${c.items
-        .map((i) => `<figure class="dw-card dw-quote"><blockquote>${para(i.text, 'dw-lead')}</blockquote><figcaption>${esc(i.title)}</figcaption></figure>`).join('')}</div>`;
+      return `<h2${E('heading')}>${esc(c.heading)}</h2>${para(c.subheading, 'dw-muted', E('subheading'))}<div class="dw-grid">${c.items
+        .map((i) => `<figure class="dw-card dw-quote"${E(`item:${i.id}`)}><blockquote>${para(i.text, 'dw-lead')}</blockquote><figcaption>${esc(i.title)}</figcaption></figure>`).join('')}</div>`;
     case 'pricing':
-      return `<h2>${esc(c.heading)}</h2>${para(c.subheading, 'dw-lead dw-muted')}<div class="dw-grid">${c.items
-        .map((i) => `<article class="dw-card dw-price"><h3>${esc(i.title)}</h3>${para(i.text)}</article>`).join('')}</div>${actions(section)}`;
+      return `<h2${E('heading')}>${esc(c.heading)}</h2>${para(c.subheading, 'dw-lead dw-muted', E('subheading'))}<div class="dw-grid">${c.items
+        .map((i) => `<article class="dw-card dw-price"${E(`item:${i.id}`)}><h3>${esc(i.title)}</h3>${para(i.text)}</article>`).join('')}</div>${actions(section, E)}`;
     case 'contact':
-      return `<div class="dw-grid"><div><h2>${esc(c.heading)}</h2>${para(c.subheading, 'dw-lead')}${para(c.body, 'dw-muted')}</div>${contactForm(section)}</div>`;
+      return `<div class="dw-grid"><div><h2${E('heading')}>${esc(c.heading)}</h2>${para(c.subheading, 'dw-lead', E('subheading'))}${para(c.body, 'dw-muted', E('body'))}</div>${contactForm(section)}</div>`;
     case 'cta':
-      return `<h2>${esc(c.heading)}</h2>${para(c.subheading, 'dw-lead')}${actions(section)}`;
+      return `<h2${E('heading')}>${esc(c.heading)}</h2>${para(c.subheading, 'dw-lead', E('subheading'))}${actions(section, E)}`;
     case 'footer':
-      return `<div class="dw-grid"><div><p class="dw-brand">${esc(c.heading)}</p>${para(c.body)}</div>${para(c.subheading, 'dw-muted')}</div>`;
+      return `<div class="dw-grid"><div><p class="dw-brand">${esc(c.heading)}</p>${para(c.body, '', E('body'))}</div>${para(c.subheading, 'dw-muted', E('subheading'))}</div>`;
   }
 }
 
@@ -178,6 +191,8 @@ export interface RenderOptions {
   pageId?: string;
   mode: 'editor' | 'export';
   selectedId?: string | null;
+  /** Element key inside the selected section, for element-level editing. */
+  selectedElement?: string | null;
   runtimeJs: string;
 }
 
@@ -213,14 +228,16 @@ export function renderPage(project: Project, opts: RenderOptions): string {
     ? `<style>${EDITOR_CSS}</style><script>
 document.addEventListener('click', function (e) {
   var el = e.target.closest('[data-dw-id]');
-  if (e.target.closest('a')) e.preventDefault();
-  if (el) parent.postMessage({ source: 'dynaweb-canvas', type: 'select', id: el.getAttribute('data-dw-id') }, '*');
+  var part = e.target.closest('[data-dw-el]');
+  if (e.target.closest('a, button')) e.preventDefault();
+  if (el) parent.postMessage({ source: 'dynaweb-canvas', type: 'select', id: el.getAttribute('data-dw-id'), element: part && el.contains(part) ? part.getAttribute('data-dw-el') : null }, '*');
 });
 var dwScrollT = 0;
 addEventListener('scroll', function () { clearTimeout(dwScrollT); dwScrollT = setTimeout(function () { parent.postMessage({ source: 'dynaweb-canvas', type: 'scroll', y: scrollY }, '*'); }, 100); }, { passive: true });
 addEventListener('message', function (e) { var d = e.data; if (d && d.source === 'dynaweb-editor' && d.type === 'restore' && typeof d.y === 'number') scrollTo(0, d.y); });
 var sel = ${JSON.stringify(opts.selectedId ?? null)};
-if (sel) { var s = document.querySelector('[data-dw-id="' + sel + '"]'); if (s) { s.classList.add('dw-selected'); } }
+var selEl = ${JSON.stringify(opts.selectedElement ?? null)};
+if (sel) { var s = document.querySelector('[data-dw-id="' + sel + '"]'); if (s) { s.classList.add('dw-selected'); if (selEl) { var p = s.querySelector('[data-dw-el="' + selEl + '"]'); if (p) p.classList.add('dw-el-selected'); } } }
 </script>`
     : '';
   return `<!doctype html>

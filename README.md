@@ -31,6 +31,7 @@ Elements animate in as they enter the viewport.
 - Duration, delay, stagger, easing, distance, initial opacity, scale and rotation, trigger threshold
 - Play once, or replay every time it scrolls into view
 - A timeline view shows how staggered elements overlap
+- Click any heading, image, button or card on the canvas to give that one element its own reveal
 
 ### 3. Horizontal scroll: immersive galleries
 

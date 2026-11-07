@@ -7,7 +7,7 @@ import { z } from 'zod';
  * always derived, never stored.
  */
 
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 const idSchema = z.string().regex(/^[a-z]+_[a-z0-9]+$/, 'invalid id');
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'expected #rrggbb');
@@ -64,6 +64,20 @@ export const horizontalSettingsSchema = z.object({
   showProgress: z.boolean(),
   showIndicators: z.boolean(),
   mobileLayout: z.enum(['vertical', 'swipe']),
+});
+
+/**
+ * Stable keys for elements inside a section: content fields by name, items by id.
+ * They survive edits and reordering because they never depend on position.
+ */
+export const ELEMENT_KEY = /^(heading|subheading|body|image|primary|secondary|item:[a-z]+_[a-z0-9]+)$/;
+
+/** A scroll reveal on one element. It overrides the section's own reveal for that element. */
+export const elementAnimationSchema = z.object({
+  id: idSchema,
+  element: z.string().regex(ELEMENT_KEY, 'unknown element'),
+  enabled: z.boolean(),
+  settings: revealSettingsSchema,
 });
 
 export const animationSchema = z.discriminatedUnion('type', [
@@ -149,6 +163,7 @@ export const sectionSchema = z.object({
   content: sectionContentSchema,
   style: sectionStyleSchema,
   animations: z.array(animationSchema).max(3),
+  elementAnimations: z.array(elementAnimationSchema).max(60),
 }).refine((s) => (SECTION_VARIANTS[s.type] as readonly string[]).includes(s.style.variant), {
   message: 'layout variant is not available for this section type',
   path: ['style', 'variant'],
@@ -231,6 +246,7 @@ export type RevealSettings = z.infer<typeof revealSettingsSchema>;
 export type RevealEffect = z.infer<typeof revealEffectSchema>;
 export type HorizontalSettings = z.infer<typeof horizontalSettingsSchema>;
 export type Animation = z.infer<typeof animationSchema>;
+export type ElementAnimation = z.infer<typeof elementAnimationSchema>;
 export type AnimationType = Animation['type'];
 export type SectionType = z.infer<typeof sectionTypeSchema>;
 export type SectionContent = z.infer<typeof sectionContentSchema>;

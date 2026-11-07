@@ -199,5 +199,7 @@ export const EDITOR_CSS = `
 [data-dw-id] { cursor: pointer; }
 [data-dw-id]:hover { outline: 2px dashed rgba(64, 120, 255, 0.6); outline-offset: -2px; }
 [data-dw-id].dw-selected { outline: 2px solid #3d6bff; outline-offset: -2px; }
+[data-dw-id].dw-selected [data-dw-el]:hover { outline: 1px dashed rgba(255, 122, 26, 0.8); outline-offset: 2px; }
+[data-dw-el].dw-el-selected { outline: 2px solid #ff7a1a !important; outline-offset: 2px; }
 [data-dw-id].dw-selected::after { content: attr(data-dw-name); position: absolute; top: 0; left: 0; z-index: 50; background: #3d6bff; color: #fff; font: 600 11px/1 system-ui, sans-serif; padding: 4px 6px; }
 `;

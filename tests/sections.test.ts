@@ -30,13 +30,13 @@ describe('new section types', () => {
   it('renders team members as a list with photo slots', () => {
     const html = renderSection(createSection('team', ids));
     expect(html).toContain('<ul class="dw-grid dw-team">');
-    expect((html.match(/<li class="dw-person">/g) ?? []).length).toBe(3);
+    expect((html.match(/<li class="dw-person"/g) ?? []).length).toBe(3);
   });
 
   it('renders a product showcase with its call to action', () => {
     const html = renderSection(createSection('showcase', ids));
-    expect((html.match(/<article class="dw-card dw-product">/g) ?? []).length).toBe(3);
-    expect(html).toContain('<a class="dw-btn" href="#">[Shop or order]</a>'); // placeholder link is neutralised
+    expect((html.match(/<article class="dw-card dw-product"/g) ?? []).length).toBe(3);
+    expect(html).toContain('<a class="dw-btn" data-dw-el="primary" href="#">[Shop or order]</a>'); // placeholder link is neutralised
   });
 });
 

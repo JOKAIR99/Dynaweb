@@ -115,43 +115,58 @@
   };
 
   // ---------- Scroll reveal ----------
+  /** True when an element, or something inside it, has its own element-level reveal. */
+  function ownsReveal(el) {
+    return el.hasAttribute('data-dw-el-reveal') || !!el.querySelector('[data-dw-el-reveal]');
+  }
+
+  /** Animates a group of elements with one reveal configuration and one observer. */
+  Runtime.prototype.revealGroup = function (targets, s) {
+    var self = this;
+    if (!targets.length) return;
+    var fadeOut = s.effect === 'fade-out';
+    targets.forEach(function (el, i) {
+      var vars = revealVars(s);
+      vars['--dw-rv-dur'] = s.duration + 'ms';
+      vars['--dw-rv-delay'] = (s.delay + i * s.stagger) + 'ms';
+      vars['--dw-rv-ease'] = EASE[s.easing] || 'ease-out';
+      self.mark(el, 'dw-rv', vars);
+      if (fadeOut) el.classList.add('dw-in');
+    });
+    var io = new self.win.IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        var el = entry.target;
+        if (fadeOut) {
+          // Visible while on screen; fades once it has scrolled past the top.
+          if (!entry.isIntersecting && entry.boundingClientRect.top < 0) el.classList.remove('dw-in');
+          else el.classList.add('dw-in');
+          return;
+        }
+        if (entry.isIntersecting) {
+          el.classList.add('dw-in');
+          if (s.once) io.unobserve(el);
+        } else if (!s.once) {
+          el.classList.remove('dw-in');
+        }
+      });
+    }, { threshold: clamp(s.threshold, 0, 1), rootMargin: '0px 0px -5% 0px' });
+    targets.forEach(function (el) { io.observe(el); });
+    this.observers.push(io);
+  };
+
   Runtime.prototype.initReveal = function () {
     var self = this;
-    var sections = this.doc.querySelectorAll('[data-dw-reveal]');
-    if (!sections.length) return;
     if (typeof this.win.IntersectionObserver !== 'function') return; // content stays visible
-    Array.prototype.forEach.call(sections, function (section) {
+    // Section-level reveals skip elements that have their own reveal, so effects never stack.
+    Array.prototype.forEach.call(this.doc.querySelectorAll('[data-dw-reveal]'), function (section) {
       var s = readJson(section, 'data-dw-reveal');
       if (!s) return;
-      var targets = revealTargets(section, s.target);
-      var fadeOut = s.effect === 'fade-out';
-      targets.forEach(function (el, i) {
-        var vars = revealVars(s);
-        vars['--dw-rv-dur'] = s.duration + 'ms';
-        vars['--dw-rv-delay'] = (s.delay + i * s.stagger) + 'ms';
-        vars['--dw-rv-ease'] = EASE[s.easing] || 'ease-out';
-        self.mark(el, 'dw-rv', vars);
-        if (fadeOut) el.classList.add('dw-in');
-      });
-      var io = new self.win.IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
-          var el = entry.target;
-          if (fadeOut) {
-            // Visible while on screen; fades once it has scrolled past the top.
-            if (!entry.isIntersecting && entry.boundingClientRect.top < 0) el.classList.remove('dw-in');
-            else el.classList.add('dw-in');
-            return;
-          }
-          if (entry.isIntersecting) {
-            el.classList.add('dw-in');
-            if (s.once) io.unobserve(el);
-          } else if (!s.once) {
-            el.classList.remove('dw-in');
-          }
-        });
-      }, { threshold: clamp(s.threshold, 0, 1), rootMargin: '0px 0px -5% 0px' });
-      targets.forEach(function (el) { io.observe(el); });
-      self.observers.push(io);
+      self.revealGroup(revealTargets(section, s.target).filter(function (el) { return !ownsReveal(el); }), s);
+    });
+    // Element-level reveals: each element has its own settings and observer.
+    Array.prototype.forEach.call(this.doc.querySelectorAll('[data-dw-el-reveal]'), function (el) {
+      var s = readJson(el, 'data-dw-el-reveal');
+      if (s) self.revealGroup([el], s);
     });
   };
 
