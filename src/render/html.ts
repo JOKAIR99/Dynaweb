@@ -26,6 +26,39 @@ function media(url: string, alt: string, attrs = ''): string {
   return `<div class="dw-media"${attrs} role="img" aria-label="Image placeholder">[Image]</div>`;
 }
 
+/** A safe video: an https .mp4/.webm file, or a YouTube or Vimeo link turned into a privacy-friendly embed. */
+export function safeVideo(url: string): { kind: 'file' | 'embed'; src: string } | null {
+  const v = url.trim();
+  if (/^https:\/\/[^\s"'<>]+\.(mp4|webm)(\?[^\s"'<>]*)?$/i.test(v)) return { kind: 'file', src: v };
+  const yt = v.match(/^https:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{6,20})/);
+  if (yt) return { kind: 'embed', src: `https://www.youtube-nocookie.com/embed/${yt[1]}` };
+  const vimeo = v.match(/^https:\/\/(?:www\.)?vimeo\.com\/(\d{4,12})/);
+  if (vimeo) return { kind: 'embed', src: `https://player.vimeo.com/video/${vimeo[1]}?dnt=1` };
+  return null;
+}
+
+/** Paragraphs from plain text: a blank line starts a new paragraph. */
+function paragraphs(text: string, attrs = ''): string {
+  const parts = text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+  return parts.length ? `<div class="dw-prose"${attrs}>${parts.map((p) => `<p>${esc(p)}</p>`).join('')}</div>` : '';
+}
+
+function mediaBlock(section: Section, E: (key: string) => string): string {
+  const c = section.content;
+  const video = safeVideo(c.videoUrl);
+  const label = c.subheading.trim() || c.heading.trim() || 'Video';
+  const caption = c.subheading ? `<figcaption class="dw-muted"${E('subheading')}>${esc(c.subheading)}</figcaption>` : '';
+  if (!video) return `<figure class="dw-figure">${media(c.imageUrl, label, E('image'))}${caption}</figure>`;
+  let inner: string;
+  if (video.kind === 'file') {
+    const poster = safeImage(c.imageUrl);
+    inner = `<video class="dw-video" src="${esc(video.src)}" controls playsinline preload="metadata"${poster ? ` poster="${esc(poster)}"` : ''} aria-label="${esc(label)}"></video>`;
+  } else {
+    inner = `<iframe class="dw-video" src="${esc(video.src)}" title="${esc(label)}" loading="lazy" allow="fullscreen; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+  }
+  return `<figure class="dw-figure"><div class="dw-video-frame"${E('image')}>${inner}</div>${caption}</figure>`;
+}
+
 /** Element attributes: a stable key for selection, and the element's own reveal when it has one. */
 type ElementAttrs = (key: string) => string;
 
@@ -103,6 +136,17 @@ function sectionBody(section: Section): string {
       if (!horizontal) return `<h2${E('heading')}>${esc(c.heading)}</h2><div class="dw-grid">${panels}</div>`;
       return `<div class="dw-h-sticky"><div class="dw-inner"><h2${E('heading')}>${esc(c.heading)}</h2></div><div class="dw-h-track">${panels}</div><div class="dw-h-progress" aria-hidden="true"><span></span></div><div class="dw-h-dots" aria-hidden="true">${c.items.map(() => '<i></i>').join('')}</div></div>`;
     }
+    case 'text':
+      return `${c.heading ? `<h2${E('heading')}>${esc(c.heading)}</h2>` : ''}${para(c.subheading, 'dw-lead', E('subheading'))}${paragraphs(c.body, E('body'))}${actions(section, E)}`;
+    case 'media':
+      return `${c.heading ? `<h2${E('heading')}>${esc(c.heading)}</h2>` : ''}${mediaBlock(section, E)}`;
+    case 'custom': {
+      const hasMedia = Boolean(safeImage(c.imageUrl) || safeVideo(c.videoUrl));
+      const items = c.items.length
+        ? `<div class="dw-grid">${c.items.map((i) => `<article class="dw-card"${E(`item:${i.id}`)}>${safeImage(i.imageUrl) ? media(i.imageUrl, i.title) : ''}<h3>${esc(i.title)}</h3>${para(i.text, 'dw-muted')}</article>`).join('')}</div>`
+        : '';
+      return `<div class="dw-grid dw-custom"><div>${c.heading ? `<h2${E('heading')}>${esc(c.heading)}</h2>` : ''}${para(c.subheading, 'dw-lead', E('subheading'))}${paragraphs(c.body, E('body'))}${actions(section, E)}</div>${hasMedia ? mediaBlock(section, E) : ''}</div>${items}`;
+    }
     case 'statistics':
       return `<h2 class="dw-stats-head"${E('heading')}>${esc(c.heading)}</h2><dl class="dw-grid dw-stats">${c.items
         .map((i) => `<div class="dw-stat"${E(`item:${i.id}`)}><dt class="dw-muted">${esc(i.text)}</dt><dd>${esc(i.title)}</dd></div>`).join('')}</dl>`;
@@ -129,7 +173,7 @@ function sectionBody(section: Section): string {
 
 const TAGS: Record<Section['type'], string> = {
   navigation: 'header', hero: 'section', about: 'section', features: 'section', services: 'section', gallery: 'section',
-  testimonials: 'section', pricing: 'section', statistics: 'section', showcase: 'section', team: 'section', cta: 'section', contact: 'section', footer: 'footer',
+  testimonials: 'section', pricing: 'section', text: 'section', media: 'section', custom: 'section', statistics: 'section', showcase: 'section', team: 'section', cta: 'section', contact: 'section', footer: 'footer',
 };
 
 /** Only https endpoints may receive form data. */
@@ -152,7 +196,7 @@ function contactForm(section: Section): string {
   const attrs = (name: string, extra: string) => `id="${id(name)}" name="${name}" aria-describedby="${id(name)}-err" ${extra}`;
   const booking = c.formKind === 'booking'
     ? field('date', 'Preferred date', `<input type="date" ${attrs('date', 'required')}>`) +
-      field('guests', 'Number of guests', `<input type="number" inputmode="numeric" min="1" max="99" value="2" ${attrs('guests', 'required')}>`)
+      field('guests', 'Number of people', `<input type="number" inputmode="numeric" min="1" max="99" value="2" ${attrs('guests', 'required')}>`)
     : '';
   const action = endpoint ? ` action="${esc(endpoint)}" method="post"` : '';
   const submit = c.formKind === 'booking' ? 'Send booking request' : 'Send message';

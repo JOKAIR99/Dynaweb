@@ -16,7 +16,7 @@ const ITEM_TITLE: Partial<Record<SectionType, string>> = {
 const ITEM_TEXT: Partial<Record<SectionType, string>> = {
   testimonials: 'Quote', pricing: 'Price and what is included', statistics: 'What it measures', showcase: 'Description and price', team: 'Role',
 };
-const ITEM_SECTIONS: SectionType[] = ['navigation', 'features', 'services', 'gallery', 'testimonials', 'pricing', 'statistics', 'showcase', 'team'];
+const ITEM_SECTIONS: SectionType[] = ['navigation', 'features', 'services', 'gallery', 'testimonials', 'pricing', 'statistics', 'showcase', 'team', 'custom'];
 
 export function ContentPanel({ pageId, section, dispatch }: Props) {
   const base = { pageId, sectionId: section.id };
@@ -28,7 +28,7 @@ export function ContentPanel({ pageId, section, dispatch }: Props) {
       <TextInput label="Section name (editor only)" value={section.name} onChange={(v) => dispatch({ kind: 'renameSection', ...base, name: v || section.name })} />
       <TextInput label="Heading" value={c.heading} onChange={(v) => set({ heading: v })} />
       {section.type !== 'navigation' && <TextInput label="Subheading" value={c.subheading} multiline onChange={(v) => set({ subheading: v })} />}
-      {['about', 'footer', 'contact'].includes(section.type) && <TextInput label={section.type === 'contact' ? 'Contact details' : 'Body'} value={c.body} multiline onChange={(v) => set({ body: v })} />}
+      {['about', 'footer', 'contact', 'text', 'custom'].includes(section.type) && <TextInput label={section.type === 'contact' ? 'Contact details' : section.type === 'text' || section.type === 'custom' ? 'Text (blank line = new paragraph)' : 'Body'} value={c.body} multiline onChange={(v) => set({ body: v })} />}
       {section.type === 'contact' && (
         <>
           <Select label="Form type" value={c.formKind} options={[{ value: 'inquiry', label: 'Inquiry (name, email, message)' }, { value: 'booking', label: 'Booking request (adds date and guests)' }]} onChange={(v) => set({ formKind: v })} />
@@ -36,10 +36,16 @@ export function ContentPanel({ pageId, section, dispatch }: Props) {
           <p className="ed-hint">The form posts here: any service that accepts form POSTs, or your own API. Without an endpoint the published form says it is not connected; it never pretends to send.</p>
         </>
       )}
-      {['hero', 'about'].includes(section.type) && (
-        <TextInput label={section.type === 'hero' ? 'Background image URL (https)' : 'Image URL (https)'} value={c.imageUrl} onChange={(v) => set({ imageUrl: v })} />
+      {['hero', 'about', 'media', 'custom'].includes(section.type) && (
+        <TextInput label={section.type === 'hero' ? 'Background image URL (https)' : section.type === 'media' ? 'Image URL, or video poster (https)' : 'Image URL (https)'} value={c.imageUrl} onChange={(v) => set({ imageUrl: v })} />
       )}
-      {['hero', 'about', 'cta', 'pricing', 'showcase'].includes(section.type) && (
+      {['media', 'custom'].includes(section.type) && (
+        <>
+          <TextInput label="Video (https .mp4/.webm, YouTube or Vimeo link)" value={c.videoUrl} onChange={(v) => set({ videoUrl: v.trim() })} />
+          <p className="ed-hint">YouTube plays from youtube-nocookie.com and Vimeo with do-not-track. Other links are ignored for safety.</p>
+        </>
+      )}
+      {['hero', 'about', 'cta', 'pricing', 'showcase', 'text', 'custom'].includes(section.type) && (
         <>
           <TextInput label="Primary button label" value={c.primaryAction.label} onChange={(v) => set({ primaryAction: { ...c.primaryAction, label: v } })} />
           <TextInput label="Primary button link" value={c.primaryAction.href} onChange={(v) => set({ primaryAction: { ...c.primaryAction, href: v } })} />

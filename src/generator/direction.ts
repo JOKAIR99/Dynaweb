@@ -1,11 +1,11 @@
-import type { Atmosphere, ProjectMeta, Sector } from '../model/schema';
+import type { Atmosphere, ProjectMeta } from '../model/schema';
 import { PRESETS } from './presets';
 
 /**
  * Art direction: turns the brief into a small set of distinct design
  * proposals before anything is generated. Each proposal is a preset plus the
  * reasoning a designer would give for it. Deterministic: the same brief always
- * gives the same proposals, but two businesses with the same sector and
+ * gives the same proposals, but two projects with the same atmosphere and
  * atmosphere get a different order, so sites do not converge on one look.
  */
 export interface DesignProposal {
@@ -21,38 +21,46 @@ export interface DesignProposal {
   responsive: string;
 }
 
-const PRESET_FIT: Record<string, { atmospheres: Atmosphere[]; sectors: Sector[] }> = {
-  lagoon: { atmospheres: ['natural', 'luxury', 'modern'], sectors: ['tourism', 'hotel'] },
-  ledger: { atmospheres: ['editorial', 'minimalist'], sectors: ['other', 'restaurant'] },
-  nocturne: { atmospheres: ['luxury', 'modern'], sectors: ['hotel', 'restaurant'] },
-  kiosk: { atmospheres: ['modern', 'other'], sectors: ['restaurant', 'other'] },
-  quarry: { atmospheres: ['minimalist', 'modern'], sectors: ['other', 'hotel'] },
-  canopy: { atmospheres: ['natural', 'editorial', 'luxury'], sectors: ['tourism', 'restaurant'] },
+/** Which atmospheres each preset suits. No industries: a preset is a look, not a business type. */
+const PRESET_FIT: Record<string, Atmosphere[]> = {
+  lagoon: ['natural', 'luxury', 'modern'],
+  ledger: ['editorial', 'minimalist', 'technical'],
+  nocturne: ['luxury', 'modern', 'technical'],
+  kiosk: ['playful', 'modern'],
+  quarry: ['minimalist', 'technical', 'modern'],
+  canopy: ['natural', 'editorial', 'luxury'],
 };
 
 const CHARACTER: Record<string, string> = {
-  lagoon: 'Soft rounded surfaces and an optical-size serif: calm, airy, coastal.',
+  lagoon: 'Soft rounded surfaces and an optical-size serif: calm and airy.',
   ledger: 'Square corners, a newspaper serif and ink-red accents: precise and literate.',
-  nocturne: 'A dark stage with a gold accent and a wide geometric display face: nightlife, after-hours luxury.',
+  nocturne: 'A dark stage with a gold accent and a wide geometric display face: dramatic, after-hours.',
   kiosk: 'Chunky grotesque headlines, pill buttons and a warm poster palette: friendly and loud.',
   quarry: 'Strict grid, zero radius, one electric accent: architectural and quiet.',
-  canopy: 'A high-contrast garamond on sage and clay: botanical, handmade, slow.',
+  canopy: 'A high-contrast garamond on sage and clay: organic, handmade, slow.',
 };
 
 const LAYOUT: Record<Atmosphere, string> = {
   minimalist: 'Few sections, generous whitespace, one strong typographic idea per screen; grids stay strict.',
   luxury: 'Slow pacing: full-height hero, wide margins, imagery given room; the call to action stays quiet but always reachable.',
   modern: 'Confident scale contrast, tight grids, asymmetric splits; sections change rhythm instead of repeating.',
-  natural: 'Organic pacing, large photography, soft surfaces; content flows like a walk through the place.',
+  natural: 'Organic pacing, large images, soft surfaces; content flows from one section into the next.',
   editorial: 'Magazine logic: strong headlines, a reading measure for text, captions under images, a clear table of contents in the navigation.',
-  other: 'Structure follows the main goal: every section answers one visitor question and points to the next step.',
+  playful: 'Bold scale jumps, rounded shapes, colour blocks; one surprise per screen, never at the cost of clarity.',
+  technical: 'Precise grids, monospaced details, dense but scannable content; diagrams and figures carry the argument.',
+  other: 'Structure follows the main objective: every section answers one visitor question and points to the next step.',
 };
 
-const IMAGERY: Record<Sector, string> = {
-  tourism: 'Real photographs of the places and experiences, people in context, golden-hour light. No stock clichés.',
-  hotel: 'Rooms, details and views photographed in natural light; one hero image that shows the setting.',
-  restaurant: 'Close-up dishes, the room at service, the people who cook; warm light, no plated-food clip art.',
-  other: 'Photographs of the real product, team or work; diagrams where the subject is abstract.',
+/** Used only when the owner gave no imagery direction of their own. */
+const IMAGERY: Record<Atmosphere, string> = {
+  minimalist: 'Few images, each one essential; plenty of negative space around them.',
+  luxury: 'Large, quiet photographs with natural light and texture; nothing staged or generic.',
+  modern: 'Crisp, high-contrast images and product or interface shots; consistent cropping.',
+  natural: 'Real photographs in natural light, people and places in context.',
+  editorial: 'Documentary photographs with captions; images that tell part of the story.',
+  playful: 'Colourful illustrations or cut-out photographs; expressive, never clip art.',
+  technical: 'Diagrams, screenshots and data visualisations before decorative imagery.',
+  other: 'Real images of the subject; avoid stock photos that could belong to any site.',
 };
 
 const SPACING: Record<Atmosphere, string> = {
@@ -61,6 +69,8 @@ const SPACING: Record<Atmosphere, string> = {
   modern: 'Medium padding with deliberate tight clusters; 8 px base grid.',
   natural: 'Comfortable padding, images bleeding to the edges between text sections.',
   editorial: 'Text set to a 60 to 70 character measure, tight heading spacing, wide gutters.',
+  playful: 'Varied padding that changes rhythm between sections; generous touch targets.',
+  technical: 'Compact, consistent spacing on a 4 px grid; dense tables stay readable.',
   other: 'Medium padding; 8 px base grid.',
 };
 
@@ -68,8 +78,10 @@ const INTERACTION: Record<Atmosphere, string> = {
   minimalist: 'Almost still: fades only, no cursor effects. Motion confirms, never decorates.',
   luxury: 'Slow, weighty easing; subtle parallax depth on the hero; magnetic primary button.',
   modern: 'Snappy reveals with stagger, magnetic buttons, cards that lift on hover.',
-  natural: 'Gentle parallax on landscape imagery; one horizontal gallery to tell the story of a place.',
+  natural: 'Gentle parallax on large images; one horizontal sequence to tell a story.',
   editorial: 'Headline clip reveals, captions fading in after images; no cursor effects.',
+  playful: 'Bouncy zoom reveals and hover lifts; motion with personality but short durations.',
+  technical: 'Fast, linear transitions; motion only where it explains a change of state.',
   other: 'Light reveals on content; motion never delays reading.',
 };
 
@@ -77,9 +89,35 @@ const GOAL_NOTE: Record<ProjectMeta['goal'], string> = {
   bookings: 'The booking form is reachable from the navigation, the hero and the end of the page.',
   sales: 'Every product block ends on one clear action; pricing is never hidden.',
   leads: 'One short inquiry form, repeated as a call to action after proof sections.',
-  information: 'Navigation carries the weight; contact details are always one click away.',
+  information: 'Navigation carries the weight; key information is never more than one click away.',
   branding: 'Story first: fewer actions, more atmosphere, a memorable closing statement.',
+  community: 'Joining is the main action: show who is already here and what members do together.',
+  portfolio: 'The work leads: large visuals first, words second, contact at the end.',
+  other: 'Each section earns its place by answering one question the visitor has.',
 };
+
+/** Colour words the owner may use, mapped to the accent names describeAccent() produces. */
+const COLOUR_WORDS: Record<string, string[]> = {
+  red: ['red', 'deep red', 'vermilion'], orange: ['vermilion', 'terracotta'], terracotta: ['terracotta'],
+  gold: ['gold', 'bronze'], yellow: ['gold'], green: ['green', 'forest green'], teal: ['deep teal', 'aqua'],
+  blue: ['electric blue', 'navy', 'aqua'], navy: ['navy'], purple: ['violet'], violet: ['violet'], pink: ['magenta'],
+  dark: [], black: [], light: [], white: [],
+};
+
+/** Points for a preset that matches the owner's own colour words. */
+function colourFit(preset: (typeof PRESETS)[number], wanted: string): number {
+  const words = wanted.toLowerCase();
+  if (!words.trim()) return 0;
+  let score = 0;
+  const accent = describeAccent(preset.colors.accent);
+  for (const [word, names] of Object.entries(COLOUR_WORDS)) {
+    if (!words.includes(word)) continue;
+    if (names.includes(accent)) score += 2;
+    if ((word === 'dark' || word === 'black') && describePalette(preset.colors.bg) === 'dark') score += 2;
+    if ((word === 'light' || word === 'white') && describePalette(preset.colors.bg) === 'light') score += 1;
+  }
+  return score;
+}
 
 function hash(text: string): number {
   let h = 2166136261;
@@ -88,12 +126,11 @@ function hash(text: string): number {
 }
 
 export function proposeDirections(meta: ProjectMeta, businessName: string, count = 3): DesignProposal[] {
-  const seed = hash(`${businessName}|${meta.location}`);
+  const seed = hash(`${businessName}|${meta.location}|${meta.activity}`);
   const scored = PRESETS.map((p, i) => {
-    const fit = PRESET_FIT[p.presetId] ?? { atmospheres: [], sectors: [] };
-    const score = (fit.atmospheres.includes(meta.atmosphere) ? 2 : 0) + (fit.sectors.includes(meta.sector) ? 1 : 0);
+    const score = ((PRESET_FIT[p.presetId] ?? []).includes(meta.atmosphere) ? 2 : 0) + colourFit(p, meta.colors);
     // Tie-break by a per-business hash so equal briefs for different businesses still differ.
-    return { p, score, tie: (seed + i * 2654435761) % 1000 };
+    return { p, score, tie: hash(`${seed}|${p.presetId}|${i}`) };
   }).sort((a, b) => b.score - a.score || a.tie - b.tie);
 
   return scored.slice(0, count).map(({ p }) => ({
@@ -102,7 +139,7 @@ export function proposeDirections(meta: ProjectMeta, businessName: string, count
     character: CHARACTER[p.presetId] ?? '',
     rationale: `${p.fonts.display} headlines with ${p.fonts.body} text on a ${describePalette(p.colors.bg)} palette with a ${describeAccent(p.colors.accent)} accent. ${GOAL_NOTE[meta.goal]}`,
     layout: LAYOUT[meta.atmosphere],
-    imagery: IMAGERY[meta.sector],
+    imagery: meta.imagery.trim() || IMAGERY[meta.atmosphere],
     spacing: SPACING[meta.atmosphere],
     interaction: INTERACTION[meta.atmosphere],
     responsive: 'Mobile is designed, not shrunk: navigation collapses to the essentials, grids become one column, horizontal galleries become a vertical story or a swipe carousel, and cursor effects are turned off on touch screens.',
@@ -128,7 +165,7 @@ export function describeAccent(hex: string): string {
   h = (h * 60 + 360) % 360;
   const dark = max < 0.6;
   if (h < 15 || h >= 345) return dark ? 'deep red' : 'red';
-  if (h < 40) return dark ? 'terracotta' : 'vermilion';
+  if (h < 32) return dark ? 'terracotta' : 'vermilion';
   if (h < 65) return dark ? 'bronze' : 'gold';
   if (h < 160) return dark ? 'forest green' : 'green';
   if (h < 200) return dark ? 'deep teal' : 'aqua';

@@ -72,7 +72,7 @@ describe('layout variants', () => {
     v2.schemaVersion = 2;
     for (const s of v2.pages[0].sections) delete s.style.variant;
     const loaded = new ProjectStore(memoryStore()).parse(JSON.stringify(v2));
-    expect(loaded.schemaVersion).toBe(4);
+    expect(loaded.schemaVersion).toBe(5);
     expect(loaded.pages[0].sections.every((s) => s.style.variant === 'standard')).toBe(true);
   });
 });

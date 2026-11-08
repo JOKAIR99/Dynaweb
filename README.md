@@ -1,6 +1,6 @@
 # Dynaweb Studio
 
-**A visual website generator with an animation designer built in.** Describe a site, get a structured draft with a distinct visual identity, then control every section, style and animation in a visual editor and export a standalone website.
+**A universal visual website generator with an animation designer built in.** Any kind of site, for any purpose: a business, portfolio, event, community, product or publication. Describe it in your own words, get a structured draft with a distinct visual identity, then control every section, style and animation in a visual editor and export a standalone website.
 
 Dynaweb is early (pre-1.0) and open to contributors. Everything marked *planned* below is not built yet.
 
@@ -49,7 +49,8 @@ All three respect `prefers-reduced-motion`, keep content visible without JavaScr
 - **Creation wizard:** website name, business type, industry, audience, language, objective, a free-text brief, a choice of four original design presets, and animation intensity. Words in the brief such as *parallax*, *cinematic* or *horizontal gallery* switch on the matching animations.
 - **Visual editor:** section list with drag-and-drop reordering, duplicate and delete; a section library; a live canvas where you click a section to select it; desktop, tablet and mobile preview; zoom; undo and redo.
 - **Inspector:** content (headings, text, buttons, images, items), style (background, alignment, spacing, width, columns, per-device visibility), animation designers, and theme (presets, fonts, colours, radius, type scale, motion level).
-- **Brief engine and art direction:** sector, location, atmosphere, objective, languages, references and site address drive three ranked design proposals and the section structure (services, testimonials, pricing, contact only when the business needs them).
+- **Universal brief and art direction:** describe the project in your own words (purpose, optional activity, audience, objective, colours, typography, imagery, layout, motion, functionality). Dynaweb suggests a structure from your objective and words, never from an industry, and you tick exactly the sections you want. Three design proposals are ranked by atmosphere and your colour preferences.
+- **Building blocks:** 17 section types, including Text, Image or video (files, YouTube, Vimeo) and a free-form Custom section, each with layout variants.
 - **Layout variants:** every section type has several layouts (split, full-bleed or editorial hero, numbered or featured-first lists, masonry or filmstrip galleries, spotlight quotes...). Each preset composes pages differently, and you can switch any section's layout in the Style tab.
 - **Working forms:** contact and booking forms with real-time validation that post to any https form endpoint, and say honestly when no endpoint is connected. Booking requests are never shown as confirmed.
 - **SEO:** Open Graph, canonical URL, JSON-LD from real facts only, sitemap.xml and robots.txt.

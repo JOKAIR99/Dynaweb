@@ -14,19 +14,38 @@ const ids = createSequentialIds(7000);
 const render = (p = sampleProject()) => renderPage(p, { mode: 'export', runtimeJs: '' });
 
 describe('structure planner', () => {
-  it('builds a booking site for tourism with a booking form and no invented proof', () => {
-    expect(planSections(sampleMeta())).toEqual(['navigation', 'hero', 'about', 'services', 'gallery', 'testimonials', 'pricing', 'cta', 'contact', 'footer']);
+  it('suggests a structure from the objective and the owner words, never from an industry', () => {
+    expect(planSections(sampleMeta())).toEqual(['navigation', 'hero', 'about', 'features', 'gallery', 'testimonials', 'pricing', 'cta', 'contact', 'footer']);
+  });
+
+  it('gives the same suggestion whatever the activity is', () => {
+    const plans = ['Hotel', 'Restaurant', 'Open-source CLI', 'Wedding photographer', ''].map((activity) =>
+      planSections(sampleMeta({ activity, description: activity })).join(','));
+    expect(new Set(plans).size).toBe(1);
   });
 
   it('drops pricing and testimonials for a branding site', () => {
-    const plan = planSections(sampleMeta({ sector: 'other', goal: 'branding', brief: '' }));
+    const plan = planSections(sampleMeta({ goal: 'branding', brief: '' }));
     expect(plan).not.toContain('pricing');
     expect(plan).not.toContain('testimonials');
     expect(plan).toContain('contact');
   });
 
-  it('does not add pricing for restaurant reservations', () => {
-    expect(planSections(sampleMeta({ sector: 'restaurant' }))).not.toContain('pricing');
+  it('reacts to what the owner asks for: text, video, people, figures', () => {
+    const plan = planSections(sampleMeta({ goal: 'information', brief: '', features: 'a showreel video, our team, key figures and a long manifesto' }));
+    expect(plan).toEqual(expect.arrayContaining(['media', 'team', 'statistics', 'text']));
+    expect(plan).not.toContain('contact'); // information sites only get a form when asked
+  });
+
+  it('uses the owner structure as given', () => {
+    const p = sampleProject('', 1, {}, ['hero', 'custom', 'footer']);
+    expect(p.pages[0].sections.map((s) => s.type)).toEqual(['hero', 'custom', 'footer']);
+  });
+
+  it('builds navigation links to sections the site really has', () => {
+    const p = sampleProject('', 1, {}, ['navigation', 'hero', 'text', 'media', 'contact', 'footer']);
+    const nav = p.pages[0].sections[0];
+    expect(nav.content.items.map((i) => i.text)).toEqual(['#text', '#media', '#contact']);
   });
 
   it('uses a booking form when the goal is bookings and an inquiry form otherwise', () => {
@@ -48,7 +67,7 @@ describe('art direction', () => {
   });
 
   it('ranks presets that fit the atmosphere first', () => {
-    const top = proposeDirections(sampleMeta({ atmosphere: 'natural', sector: 'tourism' }), 'A')[0];
+    const top = proposeDirections(sampleMeta({ atmosphere: 'natural' }), 'A')[0];
     expect(['lagoon', 'canopy']).toContain(top.presetId);
   });
 
@@ -58,7 +77,7 @@ describe('art direction', () => {
   });
 
   it('returns three distinct proposals with reasoning', () => {
-    const list = proposeDirections(sampleMeta({ atmosphere: 'luxury', sector: 'hotel' }), 'Hotel X');
+    const list = proposeDirections(sampleMeta({ atmosphere: 'luxury' }), 'Project X');
     expect(new Set(list.map((p) => p.presetId)).size).toBe(3);
     list.forEach((p) => expect(p.rationale.length).toBeGreaterThan(40));
   });
@@ -74,7 +93,8 @@ describe('schema v2 migration', () => {
     for (const s of v1.pages[0].sections) { delete s.content.formKind; delete s.content.formEndpoint; }
     const loaded = new ProjectStore(memoryStore()).parse(JSON.stringify(v1));
     expect(loaded.schemaVersion).toBe(SCHEMA_VERSION);
-    expect(loaded.meta).toMatchObject({ sector: 'other', goal: 'information', languages: ['en'], siteUrl: '' });
+    expect(loaded.meta).toMatchObject({ goal: 'information', languages: ['en'], siteUrl: '', schemaType: '' });
+    expect(loaded.meta).not.toHaveProperty('sector');
     expect(loaded.theme.interactions).toEqual({ magneticButtons: false, cardHover: true });
     expect(loaded.pages[0].sections[0].content.formEndpoint).toBe('');
   });
@@ -137,7 +157,7 @@ describe('SEO', () => {
     expect(head).toContain('<meta property="og:title" content="Andaman Charters">');
     const data = structuredData(p, p.pages[0]);
     expect(data).toEqual({
-      '@context': 'https://schema.org', '@type': 'TravelAgency', name: 'Andaman Charters',
+      '@context': 'https://schema.org', '@type': 'Organization', name: 'Andaman Charters',
       url: 'https://andaman.example/', description: 'Booking requests',
       address: { '@type': 'PostalAddress', addressLocality: 'Krabi' },
     });
@@ -168,9 +188,10 @@ describe('SEO', () => {
 describe('master prompt', () => {
   it('fills the brief and keeps the honesty and command rules', () => {
     const text = buildMasterPrompt(sampleProject('', 2, { location: 'Krabi' }));
-    expect(text).toContain('- Business name: Andaman Charters');
+    expect(text).toContain('- Website name: Andaman Charters');
+    expect(text).toContain('Dynaweb is not specialised in any industry');
     expect(text).toContain('- Location: Krabi');
-    expect(text).toContain('Never invent availability, booking confirmations');
+    expect(text).toContain('Never fabricate real data, transactions, availability, testimonials');
     expect(text).toContain('Do not write HTML');
   });
 });

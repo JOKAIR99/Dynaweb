@@ -7,7 +7,7 @@ import { z } from 'zod';
  * always derived, never stored.
  */
 
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 const idSchema = z.string().regex(/^[a-z]+_[a-z0-9]+$/, 'invalid id');
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'expected #rrggbb');
@@ -89,8 +89,8 @@ export const animationSchema = z.discriminatedUnion('type', [
 // ---------- Sections ----------
 
 export const SECTION_TYPES = [
-  'navigation', 'hero', 'about', 'statistics', 'features', 'services', 'showcase', 'gallery', 'team', 'testimonials',
-  'pricing', 'cta', 'contact', 'footer',
+  'navigation', 'hero', 'about', 'text', 'media', 'statistics', 'features', 'services', 'showcase', 'gallery', 'team',
+  'testimonials', 'pricing', 'cta', 'contact', 'custom', 'footer',
 ] as const;
 export const sectionTypeSchema = z.enum(SECTION_TYPES);
 
@@ -113,6 +113,8 @@ export const sectionContentSchema = z.object({
   items: z.array(itemSchema).max(24),
   /** Contact / booking form. An empty endpoint means "not connected": the form says so instead of faking success. */
   formKind: z.enum(['inquiry', 'booking']),
+  /** Video for media sections: https .mp4/.webm, or a YouTube or Vimeo link. */
+  videoUrl: z.string().max(2000),
   formEndpoint: z.string().max(500),
 });
 
@@ -140,6 +142,9 @@ export const SECTION_VARIANTS = {
   features: ['standard', 'list', 'asymmetric'],
   services: ['standard', 'list', 'asymmetric'],
   statistics: ['standard', 'band'],
+  text: ['standard', 'editorial'],
+  media: ['standard', 'fullbleed'],
+  custom: ['standard', 'split'],
   showcase: ['standard', 'grid'],
   team: ['standard', 'list'],
   gallery: ['standard', 'masonry', 'filmstrip'],
@@ -196,16 +201,25 @@ export const themeSchema = z.object({
 
 // ---------- Project ----------
 
-export const SECTORS = ['tourism', 'hotel', 'restaurant', 'other'] as const;
-export const ATMOSPHERES = ['minimalist', 'luxury', 'modern', 'natural', 'editorial', 'other'] as const;
-export const GOALS = ['bookings', 'sales', 'leads', 'information', 'branding'] as const;
+export const ATMOSPHERES = ['minimalist', 'luxury', 'modern', 'natural', 'editorial', 'playful', 'technical', 'other'] as const;
+/** Main objectives. Universal on purpose: none implies an industry. */
+export const GOALS = ['bookings', 'sales', 'leads', 'information', 'branding', 'community', 'portfolio', 'other'] as const;
 const langCode = z.string().regex(/^[a-z]{2,3}(-[A-Za-z]{2})?$/, 'expected a language code such as en or fr');
 
+const text = (max: number) => z.string().max(max);
+
+/**
+ * The brief. Dynaweb is universal: nothing here is a fixed category. Every
+ * descriptive field is free text in the owner's words, and all of them are
+ * optional except the main objective and language, which have neutral defaults.
+ */
 export const projectMetaSchema = z.object({
-  businessType: z.string().max(120),
-  industry: z.string().max(120),
-  sector: z.enum(SECTORS),
-  location: z.string().max(200),
+  // Project identity
+  purpose: text(500),
+  description: text(2000),
+  /** Industry or activity, optional and free-form ("ceramics studio", "open-source CLI", ""). */
+  activity: text(120),
+  location: text(200),
   atmosphere: z.enum(ATMOSPHERES),
   audience: z.string().max(300),
   goal: z.enum(GOALS),
@@ -214,8 +228,20 @@ export const projectMetaSchema = z.object({
   language: langCode,
   /** All languages the site should exist in; the first is the primary. Translation arrives with multi-page sites. */
   languages: z.array(langCode).min(1).max(12),
-  references: z.string().max(2000),
-  brief: z.string().max(4000),
+  references: text(2000),
+  // Creative direction, in the owner's words
+  colors: text(300),
+  typography: text(300),
+  imagery: text(500),
+  layout: text(500),
+  motion: text(500),
+  /** Functional requirements in natural language (search, filters, maps, payments...). */
+  features: text(2000),
+  /** Technical requirements and preferences (framework, backend, hosting...). */
+  technical: text(2000),
+  brief: text(4000),
+  /** schema.org type for structured data, chosen by the owner. Empty means "Organization". */
+  schemaType: z.string().regex(/^[A-Za-z]{0,60}$/, 'expected a schema.org type such as Organization or Person'),
   /** Public site address, used for canonical URL, Open Graph and sitemap. Empty until the owner knows it. */
   siteUrl: z.string().max(300).regex(/^(https:\/\/[^\s]+)?$/, 'expected an https:// address or nothing'),
 });
@@ -253,7 +279,6 @@ export type SectionContent = z.infer<typeof sectionContentSchema>;
 export type SectionStyle = z.infer<typeof sectionStyleSchema>;
 export type Section = z.infer<typeof sectionSchema>;
 export type Theme = z.infer<typeof themeSchema>;
-export type Sector = (typeof SECTORS)[number];
 export type Atmosphere = (typeof ATMOSPHERES)[number];
 export type Goal = (typeof GOALS)[number];
 export type ProjectMeta = z.infer<typeof projectMetaSchema>;

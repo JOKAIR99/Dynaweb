@@ -35,7 +35,7 @@ export function createAnimation(type: AnimationType, ids: IdGenerator): Animatio
 const emptyLink = { label: '', href: '' };
 
 function baseContent(): SectionContent {
-  return { heading: '', subheading: '', body: '', imageUrl: '', primaryAction: emptyLink, secondaryAction: emptyLink, items: [], formKind: 'inquiry', formEndpoint: '' };
+  return { heading: '', subheading: '', body: '', imageUrl: '', primaryAction: emptyLink, secondaryAction: emptyLink, items: [], formKind: 'inquiry', formEndpoint: '', videoUrl: '' };
 }
 
 function baseStyle(): SectionStyle {
@@ -47,7 +47,7 @@ function baseStyle(): SectionStyle {
 
 export const SECTION_LABELS: Record<SectionType, string> = {
   navigation: 'Navigation', hero: 'Hero', about: 'About', features: 'Features',
-  services: 'Services', statistics: 'Key figures', showcase: 'Product showcase', team: 'Team', gallery: 'Gallery', testimonials: 'Testimonials', pricing: 'Pricing',
+  services: 'Services', text: 'Text', media: 'Image or video', custom: 'Custom section', statistics: 'Key figures', showcase: 'Product showcase', team: 'Team', gallery: 'Gallery', testimonials: 'Testimonials', pricing: 'Pricing',
   cta: 'Call to action', contact: 'Contact', footer: 'Footer',
 };
 
@@ -87,6 +87,19 @@ export function createSection(type: SectionType, ids: IdGenerator): Section {
       });
       Object.assign(style, { background: 'surface' });
       break;
+    case 'text':
+      Object.assign(content, { heading: ph('Heading'), body: ph('Your text. Separate paragraphs with a blank line.') });
+      Object.assign(style, { maxWidth: 760, columns: 1 });
+      break;
+    case 'media':
+      Object.assign(content, { heading: '', subheading: ph('Caption') });
+      Object.assign(style, { columns: 1 });
+      break;
+    case 'custom':
+      // Everything is available and nothing is assumed: the owner decides what this section is.
+      Object.assign(content, { heading: ph('Section heading'), body: ph('Text') });
+      Object.assign(style, { columns: 2 });
+      break;
     case 'statistics':
       // Never invented: every figure is a placeholder until the owner enters a real, sourced number.
       Object.assign(content, {
@@ -113,7 +126,7 @@ export function createSection(type: SectionType, ids: IdGenerator): Section {
     case 'testimonials':
       // Never invented: real quotes only, published with the customer's permission.
       Object.assign(content, {
-        heading: ph('What guests say'),
+        heading: ph('What people say'),
         subheading: ph('Only publish real reviews, with permission'),
         items: [1, 2].map((n) => item(ph(`Customer ${n} name`), ph('Real quote from a customer'))),
       });

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Command } from '../../model/commands';
 import type { Project } from '../../model/schema';
-import { ATMOSPHERES, GOALS, SECTORS } from '../../model/schema';
+import { ATMOSPHERES, GOALS } from '../../model/schema';
 import { buildMasterPrompt } from '../../ai/masterPrompt';
 import { buildRobots, buildSitemap } from '../../render/seo';
 import { download } from '../exportSite';
@@ -31,7 +31,9 @@ export function SitePanel({ project, dispatch }: { project: Project; dispatch: (
   return (
     <div className="ed-stack">
       <div className="ed-sub">Brief</div>
-      <Select label="Sector" value={m.sector} options={opts(SECTORS)} onChange={(v) => set({ sector: v })} />
+      <TextInput label="Purpose" value={m.purpose} multiline onChange={(v) => set({ purpose: v })} />
+      <TextInput label="Description" value={m.description} multiline onChange={(v) => set({ description: v })} />
+      <TextInput label="Activity or field (optional)" value={m.activity} onChange={(v) => set({ activity: v })} />
       <TextInput label="Location" value={m.location} onChange={(v) => set({ location: v })} />
       <Select label="Atmosphere" value={m.atmosphere} options={opts(ATMOSPHERES)} onChange={(v) => set({ atmosphere: v })} />
       <Select label="Primary objective" value={m.goal} options={opts(GOALS)} onChange={(v) => set({ goal: v })} />
@@ -44,12 +46,27 @@ export function SitePanel({ project, dispatch }: { project: Project; dispatch: (
       }} />
       <p className="ed-hint">Content is in the main language for now; translated pages arrive with multi-page sites.</p>
 
+      <div className="ed-sub">Creative direction</div>
+      <TextInput label="Preferred colours" value={m.colors} onChange={(v) => set({ colors: v })} />
+      <TextInput label="Typography" value={m.typography} onChange={(v) => set({ typography: v })} />
+      <TextInput label="Image and video direction" value={m.imagery} multiline onChange={(v) => set({ imagery: v })} />
+      <TextInput label="Layout preferences" value={m.layout} multiline onChange={(v) => set({ layout: v })} />
+      <TextInput label="Animation and interaction" value={m.motion} multiline onChange={(v) => set({ motion: v })} />
+      <TextInput label="References" value={m.references} multiline onChange={(v) => set({ references: v })} />
+
+      <div className="ed-sub">Functionality</div>
+      <TextInput label="What the site should do" value={m.features} multiline onChange={(v) => set({ features: v })} />
+      <TextInput label="Technical requirements" value={m.technical} multiline onChange={(v) => set({ technical: v })} />
+
       <div className="ed-sub">Search engines</div>
       <TextInput label="Public website address" value={siteUrl} placeholder="https://www.example.com" onChange={(v) => {
         setSiteUrl(v);
         if (v === '' || /^https:\/\/[^\s]+$/.test(v)) set({ siteUrl: v });
       }} />
       <p className="ed-hint">Used for the canonical URL, Open Graph and the sitemap. Title, description and structured data come from the brief and only use facts you entered.</p>
+      <TextInput label="Structured data type (schema.org, optional)" value={m.schemaType} placeholder="Organization, Person, Event, SoftwareApplication..." onChange={(v) => {
+        if (/^[A-Za-z]{0,60}$/.test(v)) set({ schemaType: v });
+      }} />
       <div className="ed-row ed-wrap">
         <button type="button" disabled={!sitemap} title={sitemap ? undefined : 'Set the public website address first'} onClick={() => sitemap && download('sitemap.xml', sitemap, 'application/xml')}>Download sitemap.xml</button>
         <button type="button" onClick={() => download('robots.txt', buildRobots(project), 'text/plain')}>Download robots.txt</button>
