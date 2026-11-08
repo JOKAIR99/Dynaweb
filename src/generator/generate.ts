@@ -3,6 +3,7 @@ import type { Animation, Project, ProjectMeta, Section, SectionType, Theme } fro
 import { SECTION_LABELS, createAnimation, createSection, ph } from '../model/defaults';
 import type { IdGenerator } from '../model/ids';
 import { getPreset } from './presets';
+import { ui } from '../render/i18n';
 
 export interface GenerateInput {
   name: string;
@@ -128,7 +129,7 @@ export function generateProject(input: GenerateInput, ids: IdGenerator, now: str
         section = withContent(section, {
           heading: name,
           // Links point at sections this site actually has.
-          items: linkable.map((t) => ({ id: ids('item'), title: t === 'contact' && bookings ? 'Book' : SECTION_LABELS[t], text: `#${t}`, imageUrl: '' })),
+          items: linkable.map((t) => ({ id: ids('item'), title: t === 'contact' && bookings ? ui(meta.language).book : ui(meta.language).sections[t] ?? SECTION_LABELS[t], text: `#${t}`, imageUrl: '' })),
         });
         break;
       case 'hero':
