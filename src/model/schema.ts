@@ -147,7 +147,7 @@ export const SECTION_VARIANTS = {
   custom: ['standard', 'split'],
   showcase: ['standard', 'grid'],
   team: ['standard', 'list'],
-  gallery: ['standard', 'masonry', 'filmstrip'],
+  gallery: ['standard', 'masonry', 'filmstrip', 'marquee'],
   testimonials: ['standard', 'spotlight'],
   pricing: ['standard', 'list'],
   cta: ['standard', 'split'],
@@ -158,7 +158,7 @@ export const SECTION_VARIANTS = {
 export const VARIANT_LABELS: Record<string, string> = {
   standard: 'Standard', centered: 'Centred', split: 'Split with image', fullbleed: 'Full-bleed image',
   editorial: 'Editorial', reversed: 'Image first', list: 'Numbered list', asymmetric: 'Featured first',
-  masonry: 'Masonry', band: 'Accent band', grid: 'Product grid', filmstrip: 'Filmstrip', spotlight: 'Spotlight quote', stacked: 'Stacked',
+  masonry: 'Masonry', band: 'Accent band', grid: 'Product grid', filmstrip: 'Filmstrip', marquee: 'Marquee (endless strip)', spotlight: 'Spotlight quote', stacked: 'Stacked',
 };
 
 export const sectionSchema = z.object({

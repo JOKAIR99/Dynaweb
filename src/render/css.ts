@@ -18,6 +18,7 @@ export function siteCss(theme: Theme): string {
 }
 *, *::before, *::after { box-sizing: border-box; }
 html, body { overflow-x: clip; margin: 0; }
+html { scroll-behavior: smooth; scroll-padding-top: 5rem; }
 body { background: var(--dw-bg); color: var(--dw-text); font-family: var(--dw-font-body); font-size: var(--dw-step-0); line-height: 1.6; }
 h1, h2, h3 { font-family: var(--dw-font-display); font-weight: var(--dw-display-weight); line-height: 1.08; margin: 0 0 0.5em; overflow-wrap: break-word; min-width: 0; text-wrap: balance; }
 h1 { font-size: var(--dw-step-4); } h2 { font-size: var(--dw-step-3); } h3 { font-size: var(--dw-step-1); }
@@ -211,6 +212,14 @@ html.dw-js .dw-intro.dw-in .dw-hero-bg, html.dw-js .dw-intro.dw-in .dw-media img
 .dw-media img.dw-zoom { transform: scale(var(--dw-zoom, 1)); will-change: transform; }
 .dw-stat dd { font-variant-numeric: tabular-nums; }
 
+/* Marquee gallery: an endless, pausable strip */
+.dw-marquee { overflow: hidden; margin-inline: calc(var(--dw-gutter) * -1); mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent); }
+.dw-marquee-track { display: flex; width: max-content; animation: dw-marquee calc(var(--dw-mq-n, 4) * 6s) linear infinite; }
+.dw-marquee:hover .dw-marquee-track, .dw-marquee:focus-within .dw-marquee-track { animation-play-state: paused; }
+.dw-marquee-set { display: flex; gap: 1rem; padding-right: 1rem; }
+.dw-marquee .dw-h-panel { flex: 0 0 clamp(14rem, 28vw, 24rem); }
+@keyframes dw-marquee { to { transform: translateX(-50%); } }
+
 /* Micro-interactions */
 .dw-hover .dw-card { transition: transform 220ms ease-out, opacity 220ms ease-out; }
 .dw-hover .dw-card:hover { transform: translateY(-4px); }
@@ -220,7 +229,11 @@ html.dw-js .dw-intro.dw-in .dw-hero-bg, html.dw-js .dw-intro.dw-in .dw-media img
 @media (min-width: 1100px) { .dw-hide-desktop { display: none !important; } }
 @media (prefers-reduced-motion: reduce) {
   .dw-rv { transition: none !important; opacity: 1 !important; transform: none !important; filter: none !important; clip-path: none !important; }
+  html { scroll-behavior: auto; }
   .dw-plx-layer { transform: none !important; }
+  .dw-marquee { overflow-x: auto; mask-image: none; }
+  .dw-marquee-track { animation: none; }
+  .dw-marquee-set[aria-hidden] { display: none; }
   .dw-media img.dw-zoom { transform: none !important; }
   .dw-intro h1 .dw-w, .dw-intro .dw-lead, .dw-intro .dw-actions, .dw-intro .dw-hero-bg, .dw-intro .dw-media img { transition: none !important; opacity: 1 !important; transform: none !important; filter: none !important; }
   .dw-btn { transition: none; }
