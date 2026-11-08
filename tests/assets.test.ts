@@ -33,6 +33,7 @@ describe('image assets', () => {
     const p = withHeroImage(assetRef('asset_abc1'));
     const html = renderPage(resolveAssets(p, new Map([['asset_abc1', PNG]])), { mode: 'export', runtimeJs: '' });
     expect(html).toContain(`<img src="${PNG}"`);
+    expect(html).toContain('decoding="async"');
   });
 
   it('shows the normal placeholder when an image was deleted', () => {
@@ -43,8 +44,8 @@ describe('image assets', () => {
   });
 
   it('never upscales and keeps the aspect ratio when resizing', () => {
-    expect(fitWithin(4000, 2000)).toEqual({ width: 1920, height: 960 });
-    expect(fitWithin(1000, 3000)).toEqual({ width: 640, height: 1920 });
+    expect(fitWithin(4000, 2000)).toEqual({ width: 2560, height: 1280 });
+    expect(fitWithin(1000, 3000)).toEqual({ width: 853, height: 2560 });
     expect(fitWithin(800, 600)).toEqual({ width: 800, height: 600 });
   });
 

@@ -39,7 +39,7 @@ export function AssetsPanel({ assets, usedIds, onUpload, onDelete }: Props) {
       <button type="button" disabled={busy} onClick={() => input.current?.click()}>{busy ? 'Adding...' : 'Upload images'}</button>
       <input ref={input} type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden onChange={(e) => upload(e.target.files)} />
       {message && <p className="ed-hint" role="status">{message}</p>}
-      {assets.length === 0 && <p className="ed-hint">JPEG, PNG, WebP or GIF up to 15 MB. Large images are resized to 1920 px.</p>}
+      {assets.length === 0 && <p className="ed-hint">JPEG, PNG, WebP or GIF up to 15 MB. Large images are kept sharp up to 2560 px.</p>}
       <ul className="ed-asset-grid">
         {assets.map((a) => (
           <li key={a.id} title={`${a.name}, ${a.width}x${a.height}, ${kb(a.bytes)}`}>
