@@ -1,6 +1,15 @@
 import type { Animation, Project, Section } from '../model/schema';
 import { EDITOR_CSS, siteCss } from './css';
 import { headTags } from './seo';
+import { ui } from './i18n';
+
+/**
+ * Language of the page being rendered, for Dynaweb's own built-in texts.
+ * renderPage() sets it before rendering its sections; rendering is synchronous,
+ * so it never leaks between pages. Sections rendered on their own default to English.
+ */
+let pageLanguage = 'en';
+const T = () => ui(pageLanguage);
 
 export function esc(value: string): string {
   return value.replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch] as string);
@@ -23,7 +32,7 @@ const isPlaceholder = (text: string) => /^\[.*\]$/.test(text.trim());
 function media(url: string, alt: string, attrs = ''): string {
   const src = safeImage(url);
   if (src) return `<div class="dw-media"${attrs}><img src="${esc(src)}" alt="${esc(alt)}" loading="lazy"></div>`;
-  return `<div class="dw-media"${attrs} role="img" aria-label="Image placeholder">[Image]</div>`;
+  return `<div class="dw-media"${attrs} role="img" aria-label="${T().imagePlaceholderLabel}">${T().imagePlaceholder}</div>`;
 }
 
 /** A safe video: an https .mp4/.webm file, or a YouTube or Vimeo link turned into a privacy-friendly embed. */
@@ -197,20 +206,20 @@ function contactForm(section: Section): string {
     `<div class="dw-field"><label for="${id(name)}">${label}</label>${input}<p class="dw-error" id="${id(name)}-err" aria-live="polite"></p></div>`;
   const attrs = (name: string, extra: string) => `id="${id(name)}" name="${name}" aria-describedby="${id(name)}-err" ${extra}`;
   const booking = c.formKind === 'booking'
-    ? field('date', 'Preferred date', `<input type="date" ${attrs('date', 'required')}>`) +
-      field('guests', 'Number of people', `<input type="number" inputmode="numeric" min="1" max="99" value="2" ${attrs('guests', 'required')}>`)
+    ? field('date', T().date, `<input type="date" ${attrs('date', 'required')}>`) +
+      field('guests', T().people, `<input type="number" inputmode="numeric" min="1" max="99" value="2" ${attrs('guests', 'required')}>`)
     : '';
   const action = endpoint ? ` action="${esc(endpoint)}" method="post"` : '';
-  const submit = c.formKind === 'booking' ? 'Send booking request' : 'Send message';
+  const submit = c.formKind === 'booking' ? T().sendBooking : T().sendMessage;
   const note = endpoint
-    ? (c.formKind === 'booking' ? '<p class="dw-muted dw-small">This is a request, not a confirmed booking. We reply to confirm availability.</p>' : '')
-    : '<p class="dw-muted dw-small" data-dw-offline>This form is not connected yet: messages cannot be sent from this page.</p>';
+    ? (c.formKind === 'booking' ? `<p class="dw-muted dw-small">${T().requestNote}</p>` : '')
+    : `<p class="dw-muted dw-small" data-dw-offline>${T().offlineNote}</p>`;
   return `<form class="dw-form" novalidate data-dw-form="${c.formKind}"${endpoint ? ` data-dw-endpoint="${esc(endpoint)}"` : ''}${action}>` +
-    field('name', 'Name', `<input type="text" autocomplete="name" maxlength="120" ${attrs('name', 'required')}>`) +
-    field('email', 'Email', `<input type="email" autocomplete="email" maxlength="200" ${attrs('email', 'required')}>`) +
+    field('name', T().name, `<input type="text" autocomplete="name" maxlength="120" ${attrs('name', 'required')}>`) +
+    field('email', T().email, `<input type="email" autocomplete="email" maxlength="200" ${attrs('email', 'required')}>`) +
     booking +
-    field('message', c.formKind === 'booking' ? 'Anything we should know' : 'Message', `<textarea rows="4" maxlength="4000" ${attrs('message', c.formKind === 'booking' ? '' : 'required')}></textarea>`) +
-    `<div class="dw-hp" aria-hidden="true"><label>Leave empty<input type="text" name="company_website" tabindex="-1" autocomplete="off"></label></div>` +
+    field('message', c.formKind === 'booking' ? T().bookingMessage : T().message, `<textarea rows="4" maxlength="4000" ${attrs('message', c.formKind === 'booking' ? '' : 'required')}></textarea>`) +
+    `<div class="dw-hp" aria-hidden="true"><label>${T().honeypot}<input type="text" name="company_website" tabindex="-1" autocomplete="off"></label></div>` +
     `<button type="submit" class="dw-btn">${submit}</button><p class="dw-form-status" role="status" aria-live="polite"></p>${note}</form>`;
 }
 
@@ -266,6 +275,7 @@ export function anchorFor(sections: Section[], index: number): string {
 }
 
 export function renderPage(project: Project, opts: RenderOptions): string {
+  pageLanguage = project.meta.language;
   const page = project.pages.find((p) => p.id === opts.pageId) ?? project.pages[0];
   const t = project.theme;
   const editor = opts.mode === 'editor';

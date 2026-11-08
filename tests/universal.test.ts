@@ -108,3 +108,24 @@ describe('industry-neutral output', () => {
     expect(own.imagery).toBe('Hand-drawn diagrams only');
   });
 });
+
+describe('built-in texts follow the site language', () => {
+  it('renders French form labels, notes and navigation on a French site', async () => {
+    const { renderPage } = await import('../src/render/html');
+    const fr = sampleProject('', 2, { language: 'fr', languages: ['fr'] }, ['navigation', 'hero', 'gallery', 'testimonials', 'contact', 'footer']);
+    const html = renderPage(fr, { mode: 'export', runtimeJs: '' });
+    for (const text of ['>Nom</label>', '>E-mail</label>', '>Date souhaitée</label>', '>Nombre de personnes</label>', 'Envoyer la demande de réservation', 'pas encore connecté']) {
+      expect(html).toContain(text);
+    }
+    expect(html).not.toContain('>Name</label>');
+    const nav = fr.pages[0].sections[0].content.items.map((i) => i.title);
+    expect(nav).toEqual(['Galerie', 'Avis', 'Réserver']);
+  });
+
+  it('keeps English built-in texts on an English site', async () => {
+    const { renderPage } = await import('../src/render/html');
+    const html = renderPage(sampleProject(), { mode: 'export', runtimeJs: '' });
+    expect(html).toContain('>Name</label>');
+    expect(html).toContain('Send booking request');
+  });
+});

@@ -245,3 +245,19 @@ describe('runtime: magnetic buttons', () => {
     expect(touch.doc.querySelector('.dw-magnet')).toBeNull();
   });
 });
+
+describe('runtime: form messages follow the page language', () => {
+  it('shows French messages on a French site and English ones otherwise', () => {
+    const fr = sampleProject('', 2, { language: 'fr', languages: ['fr'] });
+    const { doc, runtime } = setup({ html: renderPage(fr, { mode: 'export', runtimeJs: '' }) });
+    runtime.init();
+    doc.querySelector('form')!.dispatchEvent(new doc.defaultView!.Event('submit', { cancelable: true }));
+    const name = doc.querySelector('form [name="name"]') as HTMLInputElement;
+    expect(doc.getElementById(`${name.id}-err`)!.textContent).toBe('Merci de remplir ce champ.');
+    const en = setup();
+    en.runtime.init();
+    en.doc.querySelector('form')!.dispatchEvent(new en.doc.defaultView!.Event('submit', { cancelable: true }));
+    const enName = en.doc.querySelector('form [name="name"]') as HTMLInputElement;
+    expect(en.doc.getElementById(`${enName.id}-err`)!.textContent).toBe('Please fill in this field.');
+  });
+});

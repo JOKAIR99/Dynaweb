@@ -280,6 +280,18 @@
     failed: 'Sending failed. Please try again, or use the contact details on this page.'
   };
 
+  // French versions of the form messages; the page language (<html lang>) picks the table.
+  var FORM_TEXT_FR = {
+    missing: 'Merci de remplir ce champ.',
+    email: 'Saisissez une adresse e-mail valide, par exemple nom@exemple.fr.',
+    range: function (el) { return 'Saisissez un nombre entre ' + el.min + ' et ' + el.max + '.'; },
+    past: 'Choisissez une date à partir d’aujourd’hui.',
+    offline: 'Ce formulaire n’est pas encore connecté, rien n’a été envoyé. Utilisez les coordonnées de cette page.',
+    sending: 'Envoi en cours...',
+    sent: { inquiry: 'Merci. Votre message a été envoyé.', booking: 'Demande envoyée. Ce n’est pas encore une réservation confirmée : vous recevrez une réponse sur la disponibilité.' },
+    failed: 'L’envoi a échoué. Réessayez, ou utilisez les coordonnées de cette page.'
+  };
+
   function todayIso(win) {
     var d = new win.Date();
     return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
@@ -287,6 +299,7 @@
 
   /** Returns an error message for a field, or '' when it is valid. */
   Runtime.prototype.fieldError = function (el) {
+    var FORM_TEXT = this.text;
     if (el.type === 'date' && el.value && el.value < todayIso(this.win)) return FORM_TEXT.past;
     var v = el.validity;
     if (!v || v.valid) return '';
@@ -306,6 +319,9 @@
 
   Runtime.prototype.initForms = function () {
     var self = this;
+    var lang = (this.doc.documentElement.getAttribute('lang') || 'en').toLowerCase();
+    this.text = lang.indexOf('fr') === 0 ? FORM_TEXT_FR : FORM_TEXT;
+    var FORM_TEXT_LOCAL = this.text;
     Array.prototype.forEach.call(this.doc.querySelectorAll('form[data-dw-form]'), function (form) {
       var kind = form.getAttribute('data-dw-form') === 'booking' ? 'booking' : 'inquiry';
       var endpoint = form.getAttribute('data-dw-endpoint');
@@ -326,17 +342,17 @@
         if (firstBad) { firstBad.focus(); return; }
         var trap = form.querySelector('input[name="company_website"]');
         if (trap && trap.value) return; // bot: drop silently, never show a fake success
-        if (!endpoint) { status.textContent = FORM_TEXT.offline; return; }
+        if (!endpoint) { status.textContent = FORM_TEXT_LOCAL.offline; return; }
         button.disabled = true;
-        status.textContent = FORM_TEXT.sending;
+        status.textContent = FORM_TEXT_LOCAL.sending;
         self.win.fetch(endpoint, { method: 'POST', body: new self.win.FormData(form), headers: { Accept: 'application/json' } })
           .then(function (res) {
             if (!res.ok) throw new Error('HTTP ' + res.status);
-            status.textContent = FORM_TEXT.sent[kind];
+            status.textContent = FORM_TEXT_LOCAL.sent[kind];
             form.reset();
             fields.forEach(function (el) { el.removeAttribute('data-dw-touched'); el.removeAttribute('aria-invalid'); });
           })
-          .catch(function () { status.textContent = FORM_TEXT.failed; })
+          .catch(function () { status.textContent = FORM_TEXT_LOCAL.failed; })
           .then(function () { button.disabled = false; });
       });
     });
