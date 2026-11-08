@@ -294,3 +294,32 @@ describe('runtime: cinematic hero intro', () => {
     expect(section(doc, 'hero').querySelector('.dw-w')).toBeNull();
   });
 });
+
+describe('runtime: counters and image zoom', () => {
+  const STATS = '<!doctype html><html><body><section class="dw-section dw-statistics"><dl><div class="dw-stat"><dd>12,000+</dd></div><div class="dw-stat"><dd>4.8/5</dd></div><div class="dw-stat"><dd>1990</dd></div></dl></section><section class="dw-section dw-about"><div class="dw-media"><img src="data:image/png;base64,AA==" alt=""></div></section></body></html>';
+
+  it('counts statistics up from zero, keeps their format and leaves years alone', async () => {
+    const { doc, runtime, observers, win } = setup({ html: STATS });
+    runtime.init();
+    const dds = Array.from(doc.querySelectorAll('.dw-stat dd')) as HTMLElement[];
+    expect(dds.map((d) => d.textContent)).toEqual(['0+', '0.0/5', '1990']);
+    expect(dds[0].getAttribute('aria-label')).toBe('12,000+');
+    const io = observers.find((o) => o.targets.includes(dds[0]))!;
+    io.fire(dds[0], true);
+    await new Promise((r) => win.setTimeout(r, 1800));
+    expect(dds[0].textContent).toBe('12,000+');
+    runtime.destroy();
+    expect(dds[1].textContent).toBe('4.8/5');
+    expect(dds[1].hasAttribute('aria-label')).toBe(false);
+  });
+
+  it('zooms section images with scroll and cleans up', () => {
+    const { doc, runtime } = setup({ html: STATS });
+    runtime.init();
+    const img = doc.querySelector('.dw-about img') as HTMLElement;
+    expect(img.classList.contains('dw-zoom')).toBe(true);
+    expect(Number(img.style.getPropertyValue('--dw-zoom'))).toBeGreaterThanOrEqual(1);
+    runtime.destroy();
+    expect(img.style.getPropertyValue('--dw-zoom')).toBe('');
+  });
+});

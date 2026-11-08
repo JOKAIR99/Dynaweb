@@ -60,6 +60,7 @@
     this.parallax = [];
     this.horizontal = [];
     this.touched = [];
+    this.zooms = [];
     this.mouse = { x: 0, y: 0 };
     this.frame = 0;
     this.snapTimer = 0;
@@ -95,9 +96,11 @@
     this.doc.documentElement.classList.add('dw-js');
     this.initReveal();
     this.initHeroIntro();
+    this.initCounters();
     this.initParallax();
     this.initHorizontal();
-    if (this.parallax.length || this.horizontal.length) {
+    this.initImageZoom();
+    if (this.parallax.length || this.horizontal.length || this.zooms.length) {
       this.win.addEventListener('scroll', this.onScroll, { passive: true });
       this.win.addEventListener('resize', this.onResize, { passive: true });
     }
@@ -147,6 +150,86 @@
     // Two frames so the start state is painted before the transition begins.
     var raf = this.win.requestAnimationFrame ? this.win.requestAnimationFrame.bind(this.win) : function (fn) { return self.win.setTimeout(fn, 16); };
     raf(function () { raf(function () { if (self.active) hero.classList.add('dw-in'); }); });
+  };
+
+  // ---------- Counters ----------
+  /** Splits "4.8/5", "+120 %", "12,000" into prefix, number, suffix. Years are left alone. */
+  function parseCount(text) {
+    var m = /^(\D*?)(\d[\d,.\s\u00a0\u202f]*\d|\d)(.*)$/.exec(text.trim());
+    if (!m) return null;
+    var raw = m[2];
+    // A thousands separator is a mark followed by exactly three digits; any other mark is decimal.
+    var sepMatch = /\d([,\s\u00a0\u202f])\d{3}(?!\d)/.exec(raw);
+    var sep = sepMatch ? sepMatch[1] : '';
+    var noSep = sep ? raw.split(sep).join('') : raw;
+    var decMark = noSep.match(/[.,]/);
+    var clean = noSep.replace(',', '.');
+    var value = parseFloat(clean);
+    if (!isFinite(value) || value === 0) return null;
+    if (!m[1] && !m[3] && /^(1[89]|20)\d\d$/.test(raw)) return null;
+    var decimals = decMark ? clean.split('.')[1].length : 0;
+    return { prefix: m[1], value: value, suffix: m[3], decimals: decimals, sep: sep, dec: decMark ? decMark[0] : '.' };
+  }
+  function formatCount(c, v) {
+    var parts = v.toFixed(c.decimals).split('.');
+    if (c.sep) parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, c.sep);
+    return c.prefix + parts.join(c.dec) + c.suffix;
+  }
+
+  /** Statistics count up from zero the first time they come into view. */
+  Runtime.prototype.initCounters = function () {
+    var self = this;
+    if (typeof this.win.IntersectionObserver !== 'function') return;
+    var items = [];
+    this.doc.querySelectorAll('.dw-stat dd').forEach(function (dd) {
+      if (dd.children.length) return;
+      var c = parseCount(dd.textContent);
+      if (!c) return;
+      c.el = dd; c.original = dd.textContent;
+      dd.setAttribute('aria-label', c.original.trim());
+      dd.textContent = formatCount(c, 0);
+      items.push(c);
+    });
+    if (!items.length) return;
+    this.counters = items;
+    var now = function () { return self.win.performance ? self.win.performance.now() : Date.now(); };
+    var raf = this.win.requestAnimationFrame ? this.win.requestAnimationFrame.bind(this.win) : function (fn) { return self.win.setTimeout(function () { fn(now()); }, 16); };
+    var io = new this.win.IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        io.unobserve(entry.target);
+        var c = items.filter(function (x) { return x.el === entry.target; })[0];
+        var start = now();
+        var step = function () {
+          if (!self.active) return;
+          var t = clamp((now() - start) / 1600, 0, 1);
+          var eased = 1 - Math.pow(2, -10 * t);
+          c.el.textContent = t >= 1 ? c.original : formatCount(c, c.value * eased);
+          if (t < 1) raf(step);
+        };
+        raf(step);
+      });
+    }, { threshold: 0.4 });
+    items.forEach(function (c) { io.observe(c.el); });
+    this.observers.push(io);
+  };
+
+  // ---------- Image zoom on scroll ----------
+  /** Section images (not the hero) settle from a slight zoom as they cross the screen. */
+  Runtime.prototype.initImageZoom = function () {
+    var self = this;
+    this.doc.querySelectorAll('.dw-section:not(.dw-hero) .dw-media img').forEach(function (img) {
+      if (img.closest('.dw-h-track')) return;
+      self.mark(img, 'dw-zoom', { '--dw-zoom': '1.12' });
+      self.zooms.push(img);
+    });
+  };
+  Runtime.prototype.updateZoom = function (vh) {
+    this.zooms.forEach(function (img) {
+      var r = img.parentNode.getBoundingClientRect();
+      var p = clamp((vh - r.top) / (vh + r.height), 0, 1);
+      img.style.setProperty('--dw-zoom', (1.12 - 0.12 * clamp(p * 1.6, 0, 1)).toFixed(4));
+    });
   };
 
   // ---------- Scroll reveal ----------
@@ -423,6 +506,7 @@
     var vh = this.win.innerHeight;
     this.updateParallax(vh);
     this.updateHorizontal(vh);
+    this.updateZoom(vh);
   };
 
   Runtime.prototype.destroy = function () {
@@ -445,9 +529,11 @@
       h.section.style.height = '';
       h.track.style.transform = '';
     });
+    (this.counters || []).forEach(function (c) { c.el.textContent = c.original; c.el.removeAttribute('aria-label'); });
+    this.counters = null;
     if (this.heroRestore) { this.heroRestore(); this.heroRestore = null; }
     this.doc.documentElement.classList.remove('dw-js');
-    this.observers = []; this.parallax = []; this.horizontal = []; this.touched = [];
+    this.observers = []; this.parallax = []; this.horizontal = []; this.touched = []; this.zooms = [];
     this.frame = 0; this.active = false;
   };
 
