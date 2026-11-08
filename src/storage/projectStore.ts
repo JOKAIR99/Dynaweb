@@ -68,7 +68,40 @@ const MIGRATIONS: Record<number, Migration> = {
       })),
     })),
   }),
+  // v4 -> v5: universal brief. The fixed sector list is gone; its value is kept as free-text activity.
+  4: (raw) => {
+    const meta = { ...((raw.meta ?? {}) as Record<string, unknown>) };
+    const sector = typeof meta.sector === 'string' ? meta.sector : 'other';
+    const businessType = typeof meta.businessType === 'string' ? meta.businessType : '';
+    const activity = businessType || SECTOR_LABEL[sector] || '';
+    delete meta.sector;
+    delete meta.businessType;
+    delete meta.industry;
+    return {
+      ...raw,
+      schemaVersion: 5,
+      meta: {
+        purpose: '', description: businessType, activity, colors: '', typography: '', imagery: '', layout: '',
+        motion: '', features: '', technical: '', schemaType: '',
+        ...meta,
+      },
+      pages: mapSections(raw, (sec) => ({
+        ...sec,
+        content: { videoUrl: '', ...(sec.content as Record<string, unknown>) },
+      })),
+    };
+  },
 };
+
+const SECTOR_LABEL: Record<string, string> = { tourism: 'Tourism', hotel: 'Hotel', restaurant: 'Restaurant' };
+
+/** Applies a function to every section of every page. */
+function mapSections(raw: Record<string, unknown>, fn: (sec: Record<string, unknown>) => Record<string, unknown>) {
+  return (Array.isArray(raw.pages) ? raw.pages : []).map((page: Record<string, unknown>) => ({
+    ...page,
+    sections: (Array.isArray(page.sections) ? page.sections : []).map(fn),
+  }));
+}
 
 export function migrate(raw: Record<string, unknown>): Record<string, unknown> {
   let current = raw;

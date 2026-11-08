@@ -106,3 +106,4 @@ textarea { resize: vertical; }
 .wz-direction p { margin: 0; }
 .wz-proposal .wz-character { color: var(--ui-text); font-size: 13px; }
 .ed-anim-element { border-color: #ff7a1a; }
+.wz-structure { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 6px 12px; }

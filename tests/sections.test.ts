@@ -42,24 +42,23 @@ describe('new section types', () => {
 
 describe('planner rules for the new sections', () => {
   it('uses a product showcase when the goal is sales', () => {
-    const plan = planSections(sampleMeta({ sector: 'other', goal: 'sales', brief: '' }));
+    const plan = planSections(sampleMeta({ goal: 'sales', brief: '' }));
     expect(plan).toContain('showcase');
     expect(plan).not.toContain('features');
   });
 
   it('adds a team section when the brief talks about people', () => {
-    expect(planSections(sampleMeta({ brief: 'meet our guides and crew' }))).toContain('team');
+    expect(planSections(sampleMeta({ brief: 'meet our team' }))).toContain('team');
     expect(planSections(sampleMeta({ brief: '' }))).not.toContain('team');
   });
 
-  it('adds key figures for lead generation or when asked', () => {
-    expect(planSections(sampleMeta({ sector: 'other', goal: 'leads', brief: '' }))).toContain('statistics');
+  it('adds key figures only when asked', () => {
     expect(planSections(sampleMeta({ brief: 'show key figures' }))).toContain('statistics');
     expect(planSections(sampleMeta({ brief: '' }))).not.toContain('statistics');
   });
 
   it('renders a complete generated sales site', () => {
-    const p = sampleProject('our team and key figures', 2, { sector: 'other', goal: 'sales' });
+    const p = sampleProject('our team and key figures', 2, { goal: 'sales' }, 'planned');
     const html = renderPage(p, { mode: 'export', runtimeJs: '' });
     for (const anchor of ['statistics', 'showcase', 'team', 'contact']) expect(html).toContain(`id="${anchor}"`);
   });

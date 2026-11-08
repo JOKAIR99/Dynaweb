@@ -4,8 +4,13 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Changed
+
+- Dynaweb is now a universal website generator (project file format version 5; older files migrate automatically). The fixed sector list (tourism, hotel, restaurant, other) is gone: the brief is free text in the owner's words (purpose, description, optional activity, colours, typography, imagery, layout, motion, functionality, technical needs). The planner suggests sections from the objective and those words only, never from an industry; the wizard lets the owner tick exactly the sections they want. Art direction ranks presets by atmosphere and the owner's colour words. Structured data uses the schema.org type the owner chooses (Organization by default). New objectives: community, portfolio, other. New atmospheres: playful, technical.
+
 ### Added
 
+- Universal building blocks: Text (long-form paragraphs), Image or video (https .mp4/.webm, or YouTube and Vimeo embeds with privacy-friendly hosts) and Custom section (heading, text, media, buttons and items together, for anything else).
 - Element-level animation (project file format version 4, older files migrate automatically): click a heading, text, image, button or card on the canvas and give it its own scroll reveal. Element keys are stable (content fields by name, items by id), the element's reveal overrides the section reveal so effects never stack, and item animations follow their item when it is removed or its section duplicated.
 - Section types Team, Key figures (statistics) and Product showcase, each with two layouts. Figures, names and products start as placeholders: Dynaweb never invents numbers or people. The planner adds a showcase for sales sites, a team section when the brief mentions people, and key figures for lead generation or when asked.
 - Layout variants (project file format version 3, older files keep their look): 2 to 4 layouts per section type, such as split, full-bleed and editorial heroes, numbered or featured-first service lists, masonry and filmstrip galleries, spotlight testimonials. Each preset composes pages with its own layouts, and the Style tab has a layout picker.

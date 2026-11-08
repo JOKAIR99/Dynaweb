@@ -113,7 +113,7 @@ describe('schema v4 migration', () => {
     v3.schemaVersion = 3;
     for (const s of v3.pages[0].sections) delete s.elementAnimations;
     const loaded = new ProjectStore(memoryStore()).parse(JSON.stringify(v3));
-    expect(loaded.schemaVersion).toBe(4);
+    expect(loaded.schemaVersion).toBe(5);
     expect(loaded.pages[0].sections.every((s) => Array.isArray(s.elementAnimations) && s.elementAnimations.length === 0)).toBe(true);
   });
 });

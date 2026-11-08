@@ -1,6 +1,6 @@
 import { SCHEMA_VERSION } from '../model/schema';
 import type { Animation, Project, ProjectMeta, Section, SectionType, Theme } from '../model/schema';
-import { createAnimation, createSection, ph } from '../model/defaults';
+import { SECTION_LABELS, createAnimation, createSection, ph } from '../model/defaults';
 import type { IdGenerator } from '../model/ids';
 import { getPreset } from './presets';
 
@@ -11,6 +11,8 @@ export interface GenerateInput {
   presetId: string;
   /** 0 = no motion, 1 = subtle, 2 = expressive */
   motionIntensity: 0 | 1 | 2;
+  /** The owner's own structure. When given it replaces the planner's suggestion entirely. */
+  sections?: SectionType[];
 }
 
 /**
@@ -28,34 +30,34 @@ export const PRESET_LAYOUTS: Record<string, Partial<Record<SectionType, string>>
 
 const has = (text: string, ...words: string[]) => words.some((w) => text.includes(w));
 
+/** Everything the owner wrote, lower-cased: the planner reacts to their words, never to an industry. */
+const ownWords = (meta: ProjectMeta) =>
+  [meta.purpose, meta.description, meta.activity, meta.brief, meta.features, meta.layout, meta.imagery, meta.motion].join(' ').toLowerCase();
+
 /**
- * Which sections a site needs, from its sector and main goal. Sections are
- * only included when they serve the business: no pricing on a branding site,
- * no testimonials section unless reviews matter for the decision.
+ * A suggested structure, from the main objective and the owner's own words.
+ * Dynaweb is universal: no section is added because of an industry. The
+ * suggestion is only a starting point; the wizard lets the owner tick and
+ * untick every section, and the editor can add, remove and reorder anything.
  */
 export function planSections(meta: ProjectMeta): SectionType[] {
-  const brief = meta.brief.toLowerCase();
+  const said = ownWords(meta);
+  const g = meta.goal;
   const plan: SectionType[] = ['navigation', 'hero', 'about'];
-  // Figures only when the brief asks for them or proof drives leads; values stay placeholders.
-  if (has(brief, 'figures', 'numbers', 'statistics', 'stats', 'key facts') || (meta.goal === 'leads' && meta.sector === 'other')) plan.push('statistics');
-  const offer: SectionType = meta.goal === 'sales' ? 'showcase' : meta.sector === 'other' ? 'features' : 'services';
-  plan.push(offer);
-  if (meta.sector !== 'other' || has(brief, 'gallery', 'portfolio', 'photo')) plan.push('gallery');
-  if (has(brief, 'team', 'chef', 'guide', 'crew', 'founder', 'staff', 'people')) plan.push('team');
-  const reviewsMatter = meta.goal === 'bookings' || meta.goal === 'sales' || meta.goal === 'leads';
-  if (reviewsMatter) plan.push('testimonials');
-  if (meta.goal === 'sales' || (meta.goal === 'bookings' && meta.sector !== 'restaurant')) plan.push('pricing');
-  if (meta.goal !== 'information') plan.push('cta');
-  plan.push('contact', 'footer');
+  if (has(said, 'figures', 'numbers', 'statistics', 'stats', 'key facts', 'metrics')) plan.push('statistics');
+  if (g === 'sales' || has(said, 'shop', 'store', 'catalog', 'catalogue', 'products')) plan.push('showcase');
+  else plan.push('features');
+  if (has(said, 'article', 'blog', 'essay', 'manifesto', 'long text', 'story')) plan.push('text');
+  if (g === 'portfolio' || has(said, 'gallery', 'portfolio', 'photo', 'images', 'work samples')) plan.push('gallery');
+  if (has(said, 'video', 'film', 'showreel', 'trailer')) plan.push('media');
+  if (has(said, 'team', 'founder', 'staff', 'people', 'members', 'speakers')) plan.push('team');
+  if (g === 'bookings' || g === 'sales' || g === 'leads' || has(said, 'testimonial', 'review')) plan.push('testimonials');
+  if (g === 'sales' || g === 'bookings' || has(said, 'price', 'pricing', 'plans', 'tickets')) plan.push('pricing');
+  if (g !== 'information') plan.push('cta');
+  if (g !== 'information' || has(said, 'contact', 'form', 'enquir', 'inquir')) plan.push('contact');
+  plan.push('footer');
   return plan;
 }
-
-const OFFER_HEADING: Record<ProjectMeta['sector'], string> = {
-  tourism: 'Experiences you offer',
-  hotel: 'Rooms and amenities',
-  restaurant: 'Menu highlights',
-  other: 'What you offer',
-};
 
 function withContent(section: Section, patch: Partial<Section['content']>): Section {
   return { ...section, content: { ...section.content, ...patch } };
@@ -63,13 +65,13 @@ function withContent(section: Section, patch: Partial<Section['content']>): Sect
 
 function animationsFor(type: SectionType, meta: ProjectMeta, motion: 0 | 1 | 2, ids: IdGenerator): Animation[] {
   if (motion === 0) return [];
-  const brief = `${meta.brief} ${meta.objective}`.toLowerCase();
-  const depthy = meta.atmosphere === 'luxury' || meta.atmosphere === 'natural' || has(brief, 'parallax', 'cinematic', 'depth', 'immersive');
-  const sideways = has(brief, 'horizontal', 'carousel', 'portfolio', 'story') || (meta.sector === 'tourism' && motion === 2);
+  const said = ownWords(meta);
+  const depthy = meta.atmosphere === 'luxury' || meta.atmosphere === 'natural' || has(said, 'parallax', 'cinematic', 'depth', 'immersive', '3d');
+  const sideways = has(said, 'horizontal', 'carousel', 'side-scroll', 'sideways', 'storytelling');
 
   if (type === 'hero') return depthy ? [createAnimation('parallax', ids)] : [];
   if (type === 'gallery') return sideways ? [createAnimation('horizontal', ids)] : [revealFor(meta, motion, ids, 'cards')];
-  if (['about', 'statistics', 'services', 'features', 'showcase', 'team', 'testimonials', 'pricing', 'cta', 'contact'].includes(type)) {
+  if (['about', 'statistics', 'services', 'features', 'showcase', 'team', 'testimonials', 'pricing', 'cta', 'contact', 'text', 'media', 'custom'].includes(type)) {
     return [revealFor(meta, motion, ids, type === 'about' || type === 'cta' ? 'children' : 'cards')];
   }
   return [];
@@ -84,6 +86,8 @@ function revealFor(meta: ProjectMeta, motion: 1 | 2, ids: IdGenerator, target: '
     modern: { effect: 'slide-up', distance: 40, duration: 700, easing: 'back-out' },
     natural: { effect: 'blur', distance: 16, duration: 900, easing: 'expo-out' },
     editorial: { effect: 'clip', distance: 0, duration: 900, easing: 'expo-out' },
+    playful: { effect: 'zoom-in', distance: 24, duration: 650, easing: 'back-out' },
+    technical: { effect: 'slide-left', distance: 24, duration: 500, easing: 'ease-out' },
     other: { effect: 'slide-up', distance: 32, duration: 700, easing: 'expo-out' },
   } as const;
   const pick = byAtmosphere[meta.atmosphere];
@@ -104,32 +108,35 @@ function themeFor(input: GenerateInput): Theme {
 
 /**
  * Deterministic generator. Builds structure, content placeholders, animation
- * and theme from the brief. The real business name and location are used where
- * known; everything else is a [placeholder], never an invented fact.
+ * and theme from the brief. The real name and location are used where known;
+ * everything else is a [placeholder], never an invented fact.
  * Phase 5 adds an AI that refines this draft through Commands.
  */
 export function generateProject(input: GenerateInput, ids: IdGenerator, now: string): Project {
   const { meta, name } = input;
   const bookings = meta.goal === 'bookings';
 
-  const sections: Section[] = planSections(meta).map((type) => {
+  const plan = input.sections?.length ? input.sections : planSections(meta);
+  const linkable = plan.filter((t) => !['navigation', 'hero', 'footer', 'cta'].includes(t)).slice(-3);
+
+  const sections: Section[] = plan.map((type) => {
     let section = createSection(type, ids);
     switch (type) {
       case 'navigation':
         section = withContent(section, {
           heading: name,
-          items: section.content.items.map((it, i) => (i === 2 ? { ...it, title: bookings ? 'Book' : 'Contact' } : it)),
+          // Links point at sections this site actually has.
+          items: linkable.map((t) => ({ id: ids('item'), title: t === 'contact' && bookings ? 'Book' : SECTION_LABELS[t], text: `#${t}`, imageUrl: '' })),
         });
         break;
       case 'hero':
         section = withContent(section, {
           primaryAction: { label: bookings ? ph('Book now') : ph('Primary action'), href: '#contact' },
-          subheading: meta.location ? ph(`One sentence: what you offer in ${meta.location}, and for whom`) : section.content.subheading,
+          subheading: ph(`One sentence: what this is${meta.location ? ` (${meta.location})` : ''} and who it is for`),
         });
         break;
-      case 'services':
       case 'features':
-        section = withContent(section, { heading: ph(OFFER_HEADING[meta.sector]) });
+        section = withContent(section, { heading: ph('Key points') });
         break;
       case 'cta':
         section = withContent(section, { primaryAction: { label: bookings ? ph('Check availability') : ph('Get in touch'), href: '#contact' } });

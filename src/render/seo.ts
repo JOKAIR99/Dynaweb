@@ -12,22 +12,18 @@ export function pageUrl(project: Project, page: Page): string | null {
 }
 
 function description(project: Project): string {
-  return real(project.meta.objective) ?? real(project.meta.businessType) ?? project.name;
+  return real(project.meta.objective) ?? real(project.meta.purpose) ?? real(project.meta.description) ?? project.name;
 }
-
-const SCHEMA_TYPE: Record<Project['meta']['sector'], string> = {
-  tourism: 'TravelAgency', hotel: 'Hotel', restaurant: 'Restaurant', other: 'LocalBusiness',
-};
 
 /**
  * schema.org JSON-LD built only from facts the owner entered. Nothing is
- * inferred: no phone, price range, rating or opening hours unless they exist
- * in the project (they do not yet, so they are never emitted).
+ * inferred: the type is the one the owner chose (Organization when they chose
+ * none), and no phone, price range, rating or opening hours are ever made up.
  */
 export function structuredData(project: Project, page: Page): Record<string, unknown> {
   const data: Record<string, unknown> = {
     '@context': 'https://schema.org',
-    '@type': SCHEMA_TYPE[project.meta.sector],
+    '@type': project.meta.schemaType || 'Organization',
     name: project.name,
   };
   const url = pageUrl(project, page);
