@@ -6,6 +6,7 @@ import { createRandomIds } from '../model/ids';
 import { generateProject, planSections } from '../generator/generate';
 import { proposeDirections } from '../generator/direction';
 import { PRESETS } from '../generator/presets';
+import { AREAS, getArea } from '../generator/areas';
 import { SECTION_LABELS } from '../model/defaults';
 import { Select, TextInput } from './controls';
 
@@ -18,6 +19,8 @@ const label = (v: string) => v[0].toUpperCase() + v.slice(1);
  * owner describes the project in their own words and decides its structure.
  */
 export function CreateWizard({ onCreate, onCancel }: Props) {
+  const [areaId, setAreaId] = useState('');
+  const [schemaType, setSchemaType] = useState('');
   const [name, setName] = useState('');
   const [purpose, setPurpose] = useState('');
   const [description, setDescription] = useState('');
@@ -48,13 +51,27 @@ export function CreateWizard({ onCreate, onCancel }: Props) {
     purpose, description, activity, location, audience, goal, objective,
     language: langList[0] ?? 'en', languages: langList.length ? langList : ['en'],
     atmosphere, references, colors, typography, imagery, layout, motion: motionPrefs, features, technical, brief,
-    siteUrl: siteUrl.trim(), schemaType: '',
+    siteUrl: siteUrl.trim(), schemaType,
   };
   const suggested = planSections(meta);
   // Until the owner touches the checklist, it follows the suggestion; after that it is theirs.
   const structure = picked ?? new Set(suggested);
   const proposals = useMemo(() => proposeDirections(meta, name, 3), [atmosphere, goal, colors, imagery, location, activity, name]); // eslint-disable-line react-hooks/exhaustive-deps
   const chosen = presetId ?? proposals[0]?.presetId ?? PRESETS[0].presetId;
+
+  const area = getArea(areaId);
+
+  /** Pre-fills the brief from an area. Everything stays editable; "Other" clears back to generic. */
+  const chooseArea = (id: string) => {
+    setAreaId(id);
+    const a = getArea(id);
+    if (!a) { setSchemaType(''); setPicked(null); return; }
+    setActivity(a.activity);
+    setGoal(a.goal);
+    setAtmosphere(a.atmosphere);
+    setSchemaType(a.schemaType);
+    setPicked(new Set(a.sections));
+  };
 
   const toggle = (type: SectionType) => {
     const next = new Set(structure);
@@ -73,7 +90,7 @@ export function CreateWizard({ onCreate, onCancel }: Props) {
     }
     const sections = SECTION_TYPES.filter((t) => structure.has(t));
     if (sections.length === 0) { setError('Choose at least one section.'); return; }
-    onCreate(generateProject({ name: name.trim(), owner: 'local', meta: checked.data, presetId: chosen, motionIntensity: motion, sections }, createRandomIds(), new Date().toISOString()));
+    onCreate(generateProject({ name: name.trim(), owner: 'local', meta: checked.data, presetId: chosen, motionIntensity: motion, sections, headings: area?.headings }, createRandomIds(), new Date().toISOString()));
   };
 
   return (
@@ -82,6 +99,10 @@ export function CreateWizard({ onCreate, onCancel }: Props) {
       <p className="ed-hint">Any kind of website: a business, a portfolio, an event, a community, a product, a publication. Only the name is required; everything else helps.</p>
       <section>
         <h2>1. Project</h2>
+        <Select label="Area (optional starting point)" value={areaId}
+          options={[{ value: '', label: 'Other / custom: start from scratch' }, ...AREAS.map((a) => ({ value: a.id, label: a.label }))]}
+          onChange={chooseArea} />
+        {area && <p className="ed-hint">Pre-filled for {area.label.toLowerCase()}: objective, atmosphere, sections and headings. Change anything below.</p>}
         <div className="wz-grid">
           <TextInput label="Website name" value={name} onChange={setName} />
           <TextInput label="Activity or field (optional)" value={activity} onChange={setActivity} placeholder="Whatever describes it best" />
@@ -111,7 +132,7 @@ export function CreateWizard({ onCreate, onCancel }: Props) {
       <section>
         <h2>3. Functionality</h2>
         <TextInput label="What should the site do? (optional, in your words)" value={features} multiline onChange={setFeatures}
-          placeholder="e.g. a contact form, a searchable list, a video, a sign-up for updates" />
+          placeholder={area ? `e.g. ${area.featuresHint}` : 'e.g. a contact form, a searchable list, a video, a sign-up for updates'} />
         <TextInput label="Technical requirements (optional)" value={technical} multiline onChange={setTechnical}
           placeholder="e.g. hosting, integrations, framework preferences" />
         <p className="ed-hint">Dynaweb builds forms, galleries, video and animation today. Other requests are kept in the brief for the AI assistant and listed as needing an integration.</p>
