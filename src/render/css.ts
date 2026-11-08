@@ -207,6 +207,10 @@ html.dw-js .dw-intro .dw-hero-bg, html.dw-js .dw-intro .dw-media img { transform
 html.dw-js .dw-intro.dw-in .dw-hero-bg, html.dw-js .dw-intro.dw-in .dw-media img { transform: scale(1); }
 .dw-hero .dw-media { overflow: hidden; }
 
+/* Image zoom on scroll and counters */
+.dw-media img.dw-zoom { transform: scale(var(--dw-zoom, 1)); will-change: transform; }
+.dw-stat dd { font-variant-numeric: tabular-nums; }
+
 /* Micro-interactions */
 .dw-hover .dw-card { transition: transform 220ms ease-out, opacity 220ms ease-out; }
 .dw-hover .dw-card:hover { transform: translateY(-4px); }
@@ -217,6 +221,7 @@ html.dw-js .dw-intro.dw-in .dw-hero-bg, html.dw-js .dw-intro.dw-in .dw-media img
 @media (prefers-reduced-motion: reduce) {
   .dw-rv { transition: none !important; opacity: 1 !important; transform: none !important; filter: none !important; clip-path: none !important; }
   .dw-plx-layer { transform: none !important; }
+  .dw-media img.dw-zoom { transform: none !important; }
   .dw-intro h1 .dw-w, .dw-intro .dw-lead, .dw-intro .dw-actions, .dw-intro .dw-hero-bg, .dw-intro .dw-media img { transition: none !important; opacity: 1 !important; transform: none !important; filter: none !important; }
   .dw-btn { transition: none; }
   .dw-hover .dw-card, .dw-hover .dw-card:hover, .dw-btn.dw-magnet { transition: none; transform: none !important; }
