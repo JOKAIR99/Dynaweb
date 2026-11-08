@@ -105,3 +105,4 @@ textarea { resize: vertical; }
 .wz-direction { display: grid; gap: 4px; padding: 10px 12px; border-radius: 8px; background: var(--ui-bg); }
 .wz-direction p { margin: 0; }
 .wz-proposal .wz-character { color: var(--ui-text); font-size: 13px; }
+.ed-anim-element { border-color: #ff7a1a; }

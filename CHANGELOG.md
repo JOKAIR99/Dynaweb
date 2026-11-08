@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- Element-level animation (project file format version 4, older files migrate automatically): click a heading, text, image, button or card on the canvas and give it its own scroll reveal. Element keys are stable (content fields by name, items by id), the element's reveal overrides the section reveal so effects never stack, and item animations follow their item when it is removed or its section duplicated.
 - Section types Team, Key figures (statistics) and Product showcase, each with two layouts. Figures, names and products start as placeholders: Dynaweb never invents numbers or people. The planner adds a showcase for sales sites, a team section when the brief mentions people, and key figures for lead generation or when asked.
 - Layout variants (project file format version 3, older files keep their look): 2 to 4 layouts per section type, such as split, full-bleed and editorial heroes, numbered or featured-first service lists, masonry and filmstrip galleries, spotlight testimonials. Each preset composes pages with its own layouts, and the Style tab has a layout picker.
 - Brief engine (project file format version 2, older files migrate automatically): sector, location, visual atmosphere, primary objective, languages, visual references and public address.

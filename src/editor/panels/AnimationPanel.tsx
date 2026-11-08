@@ -6,6 +6,9 @@ import { Select, Slider, TextInput, Toggle } from '../controls';
 interface Props {
   pageId: string;
   section: Section;
+  /** Element key selected on the canvas, if any. */
+  element?: string | null;
+  onClearElement?: () => void;
   dispatch: (c: Command) => void;
   onReplay: () => void;
   newLayerId: () => string;
@@ -17,7 +20,7 @@ const TITLES: Record<AnimationType, string> = {
   horizontal: 'Horizontal scroll',
 };
 
-export function AnimationPanel({ pageId, section, dispatch, onReplay, newLayerId }: Props) {
+export function AnimationPanel({ pageId, section, element = null, onClearElement = () => {}, dispatch, onReplay, newLayerId }: Props) {
   const base = { pageId, sectionId: section.id };
   const present = new Set(section.animations.map((a) => a.type));
   const blocked = (t: AnimationType) => present.has(t)
@@ -27,6 +30,8 @@ export function AnimationPanel({ pageId, section, dispatch, onReplay, newLayerId
 
   return (
     <div className="ed-stack">
+      <ElementAnimationEditor pageId={pageId} section={section} element={element} onClear={onClearElement} dispatch={dispatch} onReplay={onReplay} />
+      <div className="ed-sub">Section animations</div>
       <div className="ed-row ed-wrap">
         {(['parallax', 'reveal', 'horizontal'] as const).map((t) => (
           <button key={t} type="button" disabled={blocked(t)} onClick={() => dispatch({ kind: 'addAnimation', ...base, animationType: t })}
@@ -97,11 +102,11 @@ function ParallaxDesigner({ s, set, newLayerId }: { s: ParallaxSettings; set: Se
   );
 }
 
-function RevealDesigner({ s, set }: { s: RevealSettings; set: Set }) {
+function RevealDesigner({ s, set, hideTarget = false }: { s: RevealSettings; set: Set; hideTarget?: boolean }) {
   return (
     <div className="ed-stack">
       <Select label="Effect" value={s.effect} options={revealEffectSchema.options} onChange={(v) => set({ effect: v })} />
-      <Select label="Apply to" value={s.target} options={['section', 'children', 'headings', 'images', 'buttons', 'cards'] as const} onChange={(v) => set({ target: v })} />
+      {!hideTarget && <Select label="Apply to" value={s.target} options={['section', 'children', 'headings', 'images', 'buttons', 'cards'] as const} onChange={(v) => set({ target: v })} />}
       <Slider label="Duration" value={s.duration} min={100} max={4000} step={50} unit="ms" onChange={(v) => set({ duration: v })} />
       <Slider label="Delay" value={s.delay} min={0} max={4000} step={50} unit="ms" onChange={(v) => set({ delay: v })} />
       <Slider label="Stagger" value={s.stagger} min={0} max={1000} step={10} unit="ms" onChange={(v) => set({ stagger: v })} />
@@ -145,5 +150,60 @@ function HorizontalDesigner({ s, set }: { s: HorizontalSettings; set: Set }) {
       <Select label="On mobile" value={s.mobileLayout} options={[{ value: 'vertical', label: 'Stack vertically' }, { value: 'swipe', label: 'Swipe carousel' }]} onChange={(v) => set({ mobileLayout: v })} />
       <p className="ed-hint">Panels come from the gallery items (Content tab). The section is pinned while it scrolls sideways.</p>
     </div>
+  );
+}
+
+const FIELD_LABELS: Record<string, string> = {
+  heading: 'Heading', subheading: 'Subheading', body: 'Text', image: 'Image', primary: 'Primary button', secondary: 'Secondary button',
+};
+
+/** Human label for an element key, such as "Card 2: [Offer two]". */
+export function elementLabel(section: Section, key: string): string | null {
+  if (!key.startsWith('item:')) return FIELD_LABELS[key] ?? null;
+  const index = section.content.items.findIndex((i) => `item:${i.id}` === key);
+  if (index < 0) return null;
+  const title = section.content.items[index].title.trim();
+  return `Item ${index + 1}${title ? `: ${title.length > 28 ? `${title.slice(0, 28)}...` : title}` : ''}`;
+}
+
+interface ElementEditorProps {
+  pageId: string;
+  section: Section;
+  element: string | null;
+  onClear: () => void;
+  dispatch: (c: Command) => void;
+  onReplay: () => void;
+}
+
+/** Reveal settings for one element, overriding the section reveal for that element. */
+function ElementAnimationEditor({ pageId, section, element, onClear, dispatch, onReplay }: ElementEditorProps) {
+  const label = element ? elementLabel(section, element) : null;
+  if (!element || !label) {
+    return <p className="ed-hint">Tip: click a heading, image, button or card on the canvas to animate just that element.</p>;
+  }
+  const anim = section.elementAnimations.find((e) => e.element === element);
+  const base = { kind: 'setElementAnimation' as const, pageId, sectionId: section.id, element };
+  return (
+    <fieldset className="ed-anim ed-anim-element">
+      <legend>Element: {label}</legend>
+      {!anim && (
+        <div className="ed-row ed-wrap">
+          <button type="button" onClick={() => dispatch({ ...base })}>+ Scroll reveal for this element</button>
+          <button type="button" onClick={onClear}>Done</button>
+        </div>
+      )}
+      {anim && (
+        <>
+          <div className="ed-row">
+            <Toggle label="Enabled" value={anim.enabled} onChange={(v) => dispatch({ ...base, enabled: v })} />
+            <button type="button" onClick={onReplay}>Replay preview</button>
+            <button type="button" className="ed-danger" onClick={() => dispatch({ ...base, remove: true })}>Remove</button>
+            <button type="button" onClick={onClear}>Done</button>
+          </div>
+          <p className="ed-hint">This element ignores the section's own reveal while it has its own.</p>
+          <RevealDesigner s={anim.settings} set={(settings) => dispatch({ ...base, settings })} hideTarget />
+        </>
+      )}
+    </fieldset>
   );
 }

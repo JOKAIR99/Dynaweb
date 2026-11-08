@@ -56,6 +56,18 @@ const MIGRATIONS: Record<number, Migration> = {
       })),
     })),
   }),
+  // v3 -> v4: per-element animations. Existing sections have none.
+  3: (raw) => ({
+    ...raw,
+    schemaVersion: 4,
+    pages: (Array.isArray(raw.pages) ? raw.pages : []).map((page: Record<string, unknown>) => ({
+      ...page,
+      sections: (Array.isArray(page.sections) ? page.sections : []).map((sec: Record<string, unknown>) => ({
+        elementAnimations: [],
+        ...sec,
+      })),
+    })),
+  }),
 };
 
 export function migrate(raw: Record<string, unknown>): Record<string, unknown> {
