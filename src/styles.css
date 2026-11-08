@@ -107,3 +107,7 @@ textarea { resize: vertical; }
 .wz-proposal .wz-character { color: var(--ui-text); font-size: 13px; }
 .ed-anim-element { border-color: #ff7a1a; }
 .wz-structure { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 6px 12px; }
+.ed-proposals { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.ed-proposals li { border: 1px solid var(--ui-line); border-radius: 6px; padding: 6px 8px; display: grid; gap: 4px; }
+.ed-proposals li.is-rejected { color: var(--ui-danger); }
+.ed-proposals code { font-size: 11px; white-space: pre-wrap; word-break: break-all; }

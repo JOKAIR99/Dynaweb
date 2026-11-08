@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- AI assistant (AI tab): describe a change in natural language; Claude (claude-opus-5-5, structured output, server-side refusal fallback) proposes Dynaweb commands that are parsed, shape-checked and applied to a copy of the project before you see them; rejected proposals show the reason; accepted ones apply as one undo step. Missing facts and needed integrations are listed, never invented. Runs server-side through the dev server; the API key is read from the server environment and never reaches the browser bundle.
+
 ### Changed
 
 - Dynaweb is now a universal website generator (project file format version 5; older files migrate automatically). The fixed sector list (tourism, hotel, restaurant, other) is gone: the brief is free text in the owner's words (purpose, description, optional activity, colours, typography, imagery, layout, motion, functionality, technical needs). The planner suggests sections from the objective and those words only, never from an industry; the wizard lets the owner tick exactly the sections they want. Art direction ranks presets by atmosphere and the owner's colour words. Structured data uses the schema.org type the owner chooses (Organization by default). New objectives: community, portfolio, other. New atmospheres: playful, technical.

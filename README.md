@@ -56,7 +56,7 @@ All three respect `prefers-reduced-motion`, keep content visible without JavaScr
 - **SEO:** Open Graph, canonical URL, JSON-LD from real facts only, sitemap.xml and robots.txt.
 - **Export:** one standalone HTML file with its CSS and the animation runtime inlined. Projects save automatically in the browser and can be saved and opened as `.dynaweb.json` files.
 
-*Planned:* the built-in AI design assistant (today: "Copy AI prompt" in the Site tab), more section types, multi-page sites, an assets panel, ZIP export and publishing. See the [roadmap](ROADMAP.md).
+*Planned:* more section types, multi-page sites, an assets panel, ZIP export and publishing. See the [roadmap](ROADMAP.md).
 
 ## Quick start
 
@@ -74,6 +74,18 @@ Open http://localhost:5173, click **New website**, and try this brief:
 > Premium private boat tours in Thailand. Cinematic hero, parallax backgrounds, scroll-revealed content and an immersive horizontal gallery.
 
 Other commands: `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`, `npm run check` (everything CI runs), `npm run sample` (renders a sample site to `dist/sample.html`).
+
+## AI assistant
+
+Open a project, go to the **AI** tab and describe a change in your own words ("make the hero more dramatic, add a section about our process"). Claude proposes edits as Dynaweb commands; each one is validated against the site model before you see it, rejected ones are shown with the reason, and nothing changes until you apply. One Undo reverts the whole change. The assistant never invents facts: it lists what you still need to provide.
+
+Setup (the key stays on the server and never reaches the browser):
+
+1. Get an API key at https://platform.claude.com.
+2. Copy `.env.example` to `.env.local` and set `ANTHROPIC_API_KEY` (`.env.local` is git-ignored), or set it in your shell, or run `ant auth login`.
+3. Restart `npm run dev`.
+
+Defaults: model `claude-opus-5-5` at effort `medium` with server-side refusal fallback; change them with `DYNAWEB_AI_MODEL` and `DYNAWEB_AI_EFFORT`. Each request is billed to your Anthropic account. The assistant runs with the dev server today; a hosted endpoint arrives with publishing.
 
 ## Architecture
 

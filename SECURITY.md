@@ -27,6 +27,12 @@ In scope:
 
 Out of scope: vulnerabilities in a website a user builds and hosts themselves, unless they come from code Dynaweb generates.
 
+## AI assistant
+
+- The Anthropic API key is read only on the server (`server/assist.ts`), from the environment or `.env.local`. It is never sent to the browser and never logged; tests use a fake model client.
+- `/api/assist` accepts same-origin POST requests only, limits body size and request length, and handles one request at a time.
+- Model output is untrusted: every proposed command is shape-checked (`src/model/commandSchema.ts`) and validated against the project schema by `applyCommand` before it is shown, and applied only after the owner accepts it.
+
 ## For contributors
 
 - Never commit secrets, API keys or tokens. No feature today needs one.
