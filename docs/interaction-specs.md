@@ -26,6 +26,18 @@ Every interactive feature of a generated site, documented with the same seven po
 | Mobile | Single column, inputs at least 44 px tall, `type="email"`, `type="date"` and `inputmode="numeric"` bring up the right keyboards |
 | Accessibility | Every field has a `<label>`; errors are linked with `aria-describedby` and announced via `aria-live`; invalid fields get `aria-invalid`; works without JavaScript as a plain POST when an endpoint is set; works under reduced motion |
 
+## Element-level reveal (editor)
+
+| | |
+|---|---|
+| User action | Clicks a heading, text, image, button or card on the canvas, then opens the Animation tab |
+| Expected response | The element is outlined in orange and the panel shows "Element: ..." with its own reveal settings |
+| UI feedback | Orange outline on the selected element; hover outlines show what can be selected inside the selected section |
+| Data dependencies | `section.elementAnimations`, keyed by stable element keys (`heading`, `subheading`, `body`, `image`, `primary`, `secondary`, `item:<id>`) |
+| Error handling | Unknown keys and missing items are rejected by the command; removing an item removes its animation |
+| Mobile | Same behaviour in the exported site; the editor canvas works at every device size |
+| Accessibility | Off under `prefers-reduced-motion`, like every reveal; content stays visible without JavaScript |
+
 ## Parallax
 
 | | |

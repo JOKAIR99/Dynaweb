@@ -1,8 +1,8 @@
-import { projectSchema } from './schema';
+import { ELEMENT_KEY, projectSchema } from './schema';
 import type {
-  Animation, AnimationType, Page, Project, ProjectMeta, Section, SectionContent, SectionStyle, SectionType, Theme,
+  Animation, AnimationType, ElementAnimation, Page, Project, ProjectMeta, RevealSettings, Section, SectionContent, SectionStyle, SectionType, Theme,
 } from './schema';
-import { createAnimation, createSection } from './defaults';
+import { DEFAULT_REVEAL, createAnimation, createSection } from './defaults';
 import type { IdGenerator } from './ids';
 
 /**
@@ -26,6 +26,8 @@ export type Command =
   | { kind: 'updateStyle'; pageId: string; sectionId: string; patch: Partial<SectionStyle> }
   | { kind: 'addAnimation'; pageId: string; sectionId: string; animationType: AnimationType }
   | { kind: 'removeAnimation'; pageId: string; sectionId: string; animationId: string }
+  /** Adds, updates (settings merged) or, with `remove`, deletes the reveal on one element. */
+  | { kind: 'setElementAnimation'; pageId: string; sectionId: string; element: string; enabled?: boolean; settings?: Partial<RevealSettings>; remove?: boolean }
   | { kind: 'updateAnimation'; pageId: string; sectionId: string; animationId: string; enabled?: boolean; settings?: Record<string, unknown> }
   | { kind: 'updateTheme'; patch: Partial<Omit<Theme, 'colors' | 'fonts'>> & { colors?: Partial<Theme['colors']>; fonts?: Partial<Theme['fonts']> } }
   | { kind: 'replaceTheme'; theme: Theme };
@@ -54,11 +56,14 @@ function mapSection(project: Project, pageId: string, sectionId: string, fn: (s:
 const EXCLUSIVE: Record<AnimationType, AnimationType[]> = { parallax: ['horizontal'], horizontal: ['parallax'], reveal: [] };
 
 function reIdSection(section: Section, ids: IdGenerator): Section {
+  const itemIds = new Map(section.content.items.map((i) => [i.id, ids('item')]));
+  const rekey = (element: string) => (element.startsWith('item:') ? `item:${itemIds.get(element.slice(5)) ?? element.slice(5)}` : element);
   return {
     ...section,
     id: ids('sec'),
     name: `${section.name} copy`,
-    content: { ...section.content, items: section.content.items.map((i) => ({ ...i, id: ids('item') })) },
+    content: { ...section.content, items: section.content.items.map((i) => ({ ...i, id: itemIds.get(i.id) as string })) },
+    elementAnimations: section.elementAnimations.map((e) => ({ ...e, id: ids('anim'), element: rekey(e.element) })),
     animations: section.animations.map((a) => {
       const copy = { ...a, id: ids('anim') } as Animation;
       if (copy.type === 'parallax') {
@@ -135,7 +140,10 @@ function reduce(project: Project, cmd: Command, ids: IdGenerator): Project {
 
     case 'removeItem':
       return mapSection(project, cmd.pageId, cmd.sectionId, (s) => ({
-        ...s, content: { ...s.content, items: s.content.items.filter((i) => i.id !== cmd.itemId) },
+        ...s,
+        content: { ...s.content, items: s.content.items.filter((i) => i.id !== cmd.itemId) },
+        // An item's own animation goes with it.
+        elementAnimations: s.elementAnimations.filter((e) => e.element !== `item:${cmd.itemId}`),
       }));
 
     case 'updateStyle':
@@ -147,6 +155,27 @@ function reduce(project: Project, cmd: Command, ids: IdGenerator): Project {
         const clash = s.animations.find((a) => EXCLUSIVE[cmd.animationType].includes(a.type));
         if (clash) fail(`${cmd.animationType} cannot be combined with ${clash.type} on the same section`);
         return { ...s, animations: [...s.animations, createAnimation(cmd.animationType, ids)] };
+      });
+
+    case 'setElementAnimation':
+      return mapSection(project, cmd.pageId, cmd.sectionId, (s) => {
+        if (!ELEMENT_KEY.test(cmd.element)) fail(`unknown element: ${cmd.element}`);
+        if (cmd.element.startsWith('item:') && !s.content.items.some((i) => `item:${i.id}` === cmd.element)) fail(`item not found: ${cmd.element}`);
+        const existing = s.elementAnimations.find((e) => e.element === cmd.element);
+        if (cmd.remove) return { ...s, elementAnimations: s.elementAnimations.filter((e) => e.element !== cmd.element) };
+        if (!existing) {
+          const created: ElementAnimation = {
+            id: ids('anim'), element: cmd.element, enabled: cmd.enabled ?? true,
+            settings: { ...DEFAULT_REVEAL, target: 'section', stagger: 0, ...cmd.settings },
+          };
+          return { ...s, elementAnimations: [...s.elementAnimations, created] };
+        }
+        return {
+          ...s,
+          elementAnimations: s.elementAnimations.map((e) => (e.element === cmd.element
+            ? { ...e, enabled: cmd.enabled ?? e.enabled, settings: { ...e.settings, ...cmd.settings } }
+            : e)),
+        };
       });
 
     case 'removeAnimation':

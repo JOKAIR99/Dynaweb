@@ -51,7 +51,7 @@ describe('layout variants', () => {
 
   it('renders the split hero with an image slot next to the text', () => {
     const html = render(withVariant('hero', 'split'));
-    expect(html).toMatch(/<div class="dw-hero-text"><h1>.*<\/div><div class="dw-media"/);
+    expect(html).toMatch(/<div class="dw-hero-text"><h1[^>]*>.*<\/div><div class="dw-media"/);
   });
 
   it('uses the parallax layer as the full-bleed image instead of adding a second one', () => {
@@ -72,7 +72,7 @@ describe('layout variants', () => {
     v2.schemaVersion = 2;
     for (const s of v2.pages[0].sections) delete s.style.variant;
     const loaded = new ProjectStore(memoryStore()).parse(JSON.stringify(v2));
-    expect(loaded.schemaVersion).toBe(3);
+    expect(loaded.schemaVersion).toBe(4);
     expect(loaded.pages[0].sections.every((s) => s.style.variant === 'standard')).toBe(true);
   });
 });
