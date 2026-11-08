@@ -94,6 +94,7 @@
     this.initMagnetic();
     this.doc.documentElement.classList.add('dw-js');
     this.initReveal();
+    this.initHeroIntro();
     this.initParallax();
     this.initHorizontal();
     if (this.parallax.length || this.horizontal.length) {
@@ -112,6 +113,40 @@
     el.classList.add(cls);
     for (var k in vars) el.style.setProperty(k, vars[k]);
     this.touched.push({ el: el, cls: cls, vars: Object.keys(vars) });
+  };
+
+  // ---------- Cinematic hero intro ----------
+  /**
+   * The first hero plays once on load: headline word by word, slow image zoom,
+   * then the lead and buttons rise in. Skipped when the owner gave the hero
+   * its own reveal, so effects never stack. Undone by destroy().
+   */
+  Runtime.prototype.initHeroIntro = function () {
+    var self = this;
+    var hero = this.doc.querySelector('.dw-hero');
+    if (!hero || hero.classList.contains('dw-rv') || hero.querySelector('.dw-rv')) return;
+    var h1 = hero.querySelector('h1');
+    if (h1 && h1.children.length === 0 && h1.textContent.trim()) {
+      var original = h1.textContent;
+      var words = original.trim().split(/\s+/);
+      h1.setAttribute('aria-label', original.trim());
+      h1.textContent = '';
+      words.forEach(function (w, i) {
+        var span = self.doc.createElement('span');
+        span.className = 'dw-w';
+        span.setAttribute('aria-hidden', 'true');
+        span.style.setProperty('--dw-wi', String(i));
+        span.textContent = w;
+        h1.appendChild(span);
+        if (i < words.length - 1) h1.appendChild(self.doc.createTextNode(' '));
+      });
+      hero.style.setProperty('--dw-wn', String(words.length));
+      this.heroRestore = function () { h1.textContent = original; h1.removeAttribute('aria-label'); hero.style.removeProperty('--dw-wn'); };
+    }
+    this.mark(hero, 'dw-intro', {});
+    // Two frames so the start state is painted before the transition begins.
+    var raf = this.win.requestAnimationFrame ? this.win.requestAnimationFrame.bind(this.win) : function (fn) { return self.win.setTimeout(fn, 16); };
+    raf(function () { raf(function () { if (self.active) hero.classList.add('dw-in'); }); });
   };
 
   // ---------- Scroll reveal ----------
@@ -410,6 +445,7 @@
       h.section.style.height = '';
       h.track.style.transform = '';
     });
+    if (this.heroRestore) { this.heroRestore(); this.heroRestore = null; }
     this.doc.documentElement.classList.remove('dw-js');
     this.observers = []; this.parallax = []; this.horizontal = []; this.touched = [];
     this.frame = 0; this.active = false;
