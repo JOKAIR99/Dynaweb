@@ -117,3 +117,36 @@ describe('missing credentials', () => {
     expect(!result.ok && result.error).toContain('ANTHROPIC_API_KEY');
   });
 });
+
+describe('chat mode (no API key)', () => {
+  it('builds one self-contained prompt with the rules, the project and the request', async () => {
+    const { buildChatPrompt } = await import('../src/ai/proposals');
+    const prompt = buildChatPrompt(project, 'Add a video section');
+    expect(prompt).toContain('Dynaweb is not specialised in any industry');
+    expect(prompt).toContain('ANSWER FORMAT FOR THIS CHAT');
+    expect(prompt).toContain(`"id":"${hero.id}"`);
+    expect(prompt.trimEnd().endsWith('OWNER REQUEST\nAdd a video section')).toBe(true);
+  });
+
+  it('reads an answer wrapped in a code fence with chatty text around it, commands as objects', async () => {
+    const { parseAssistAnswer, validateProposals } = await import('../src/ai/proposals');
+    const pasted = `Sure! Here are the changes:\n\n\`\`\`json\n${JSON.stringify({
+      summary: 'Adds a video section',
+      commands: [{ kind: 'addSection', pageId: page.id, sectionType: 'media', index: 2 }, { kind: 'renameProject', name: '' }],
+      missingFacts: ['Link to the video'],
+    })}\n\`\`\`\n\nLet me know if you want more.`;
+    const parsed = parseAssistAnswer(pasted);
+    if (!parsed.ok) throw new Error(parsed.error);
+    expect(parsed.output.needsIntegration).toEqual([]);
+    const proposals = validateProposals(project, parsed.output.commands, ids);
+    expect(proposals.map((p) => p.ok)).toEqual([true, false]); // an empty project name is rejected
+  });
+
+  it('explains what is wrong with an unusable answer', async () => {
+    const { parseAssistAnswer } = await import('../src/ai/proposals');
+    expect(parseAssistAnswer('I cannot help with that.')).toMatchObject({ ok: false, error: expect.stringContaining('No JSON object') });
+    expect(parseAssistAnswer('```json\n{"summary": "x", "commands": [\n```')).toMatchObject({ ok: false, error: expect.stringContaining('looks incomplete') });
+    expect(parseAssistAnswer('{"summary": "x", "commands": [,]}')).toMatchObject({ ok: false, error: expect.stringContaining('not valid JSON') });
+    expect(parseAssistAnswer('{"summary": "x"}')).toMatchObject({ ok: false, error: expect.stringContaining('expected fields') });
+  });
+});

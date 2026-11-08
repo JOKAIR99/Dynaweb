@@ -111,3 +111,6 @@ textarea { resize: vertical; }
 .ed-proposals li { border: 1px solid var(--ui-line); border-radius: 6px; padding: 6px 8px; display: grid; gap: 4px; }
 .ed-proposals li.is-rejected { color: var(--ui-danger); }
 .ed-proposals code { font-size: 11px; white-space: pre-wrap; word-break: break-all; }
+.ed-optional { border-top: 1px solid var(--ui-line); padding-top: 8px; }
+.ed-optional summary { cursor: pointer; color: var(--ui-muted); }
+.ed-panel textarea { width: 100%; }

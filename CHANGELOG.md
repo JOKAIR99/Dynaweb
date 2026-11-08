@@ -6,7 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
-- AI assistant (AI tab): describe a change in natural language; Claude (claude-opus-5-5, structured output, server-side refusal fallback) proposes Dynaweb commands that are parsed, shape-checked and applied to a copy of the project before you see them; rejected proposals show the reason; accepted ones apply as one undo step. Missing facts and needed integrations are listed, never invented. Runs server-side through the dev server; the API key is read from the server environment and never reaches the browser bundle.
+- AI assistant (AI tab), no API key needed: Dynaweb writes a prompt for your own Claude chat and checks the pasted answer. Optionally, a server with an API key (claude-opus-5-5, structured output, server-side refusal fallback) can be used instead. Either way, Claude proposes Dynaweb commands that are parsed, shape-checked and applied to a copy of the project before you see them; rejected proposals show the reason; accepted ones apply as one undo step. Missing facts and needed integrations are listed, never invented. Runs server-side through the dev server; the API key is read from the server environment and never reaches the browser bundle.
 
 ### Changed
 

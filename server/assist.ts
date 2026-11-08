@@ -12,32 +12,19 @@
  */
 import Anthropic from '@anthropic-ai/sdk';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
-import { z } from 'zod';
-import { buildMasterPrompt } from '../src/ai/masterPrompt';
-import { applyCommand } from '../src/model/commands';
-import type { Command } from '../src/model/commands';
-import { parseCommand } from '../src/model/commandSchema';
+import { AssistOutput, MAX_REQUEST_CHARS, buildPromptParts, validateProposals } from '../src/ai/proposals';
+import type { AssistOutputT, Proposal } from '../src/ai/proposals';
 import { createRandomIds } from '../src/model/ids';
 import type { IdGenerator } from '../src/model/ids';
 import { validateProject } from '../src/model/schema';
-import type { Project } from '../src/model/schema';
 
 export const MODEL = process.env.DYNAWEB_AI_MODEL || 'claude-opus-5-5';
 const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
 type Effort = (typeof EFFORTS)[number];
 const EFFORT: Effort = (EFFORTS as readonly string[]).includes(process.env.DYNAWEB_AI_EFFORT ?? '') ? (process.env.DYNAWEB_AI_EFFORT as Effort) : 'medium';
 
-export const MAX_REQUEST_CHARS = 2000;
-export const MAX_COMMANDS = 50;
-
-/** What Claude must return. Each command is a JSON string so the outer schema stays simple and strict. */
-export const AssistOutput = z.object({
-  summary: z.string().describe('One or two sentences: what these changes do, in the owner language.'),
-  commands: z.array(z.string()).describe('Dynaweb commands, each one a JSON object encoded as a string, in the order to apply them.'),
-  missingFacts: z.array(z.string()).describe('Real facts the owner still has to provide (never invent them).'),
-  needsIntegration: z.array(z.string()).describe('Requested functionality that needs an external service or credentials.'),
-});
-export type AssistOutputT = z.infer<typeof AssistOutput>;
+export { MAX_COMMANDS, MAX_REQUEST_CHARS } from '../src/ai/proposals';
+export type { AssistOutputT, Proposal } from '../src/ai/proposals';
 
 /** The model call, injectable so tests never hit the network. */
 export type ModelCall = (args: { system: string; user: string }) => Promise<{ parsed: AssistOutputT | null; stopReason: string | null; model: string }>;
@@ -59,40 +46,9 @@ export function anthropicModelCall(client: Anthropic = new Anthropic()): ModelCa
   };
 }
 
-export interface Proposal {
-  /** The command as Claude wrote it (JSON text), for display and debugging. */
-  raw: string;
-  /** The parsed command when it is valid and applies cleanly on top of the earlier accepted ones. */
-  command: Command | null;
-  ok: boolean;
-  error?: string;
-}
-
 export type AssistResult =
   | { ok: true; summary: string; proposals: Proposal[]; missingFacts: string[]; needsIntegration: string[]; model: string }
   | { ok: false; status: number; error: string };
-
-/** The project as Claude sees it: everything needed to address sections, items and animations by id. */
-function describeProject(project: Project): string {
-  return JSON.stringify({
-    name: project.name,
-    meta: project.meta,
-    theme: project.theme,
-    pages: project.pages.map((page) => ({
-      id: page.id,
-      title: page.title,
-      sections: page.sections.map((s) => ({
-        id: s.id, type: s.type, name: s.name, content: s.content, style: s.style,
-        animations: s.animations, elementAnimations: s.elementAnimations,
-      })),
-    })),
-  });
-}
-
-const COMMAND_RULES = `
-Answer only through the required JSON structure. Each entry of "commands" is one Dynaweb command encoded as a JSON string, for example:
-"{\\"kind\\":\\"updateContent\\",\\"pageId\\":\\"page_x\\",\\"sectionId\\":\\"sec_y\\",\\"patch\\":{\\"heading\\":\\"[Your headline]\\"}}"
-Use only ids that appear in the project JSON. Commands apply in order; a command may refer to a section added by an earlier one only if you know its id, so prefer editing existing sections. Keep [placeholders] for any fact the owner has not given and list those facts in "missingFacts".`;
 
 export async function runAssist(input: { project: unknown; request: unknown }, call: ModelCall, ids: IdGenerator = createRandomIds()): Promise<AssistResult> {
   if (typeof input.request !== 'string' || !input.request.trim()) return { ok: false, status: 400, error: 'Describe what you want to change.' };
@@ -103,10 +59,7 @@ export async function runAssist(input: { project: unknown; request: unknown }, c
 
   let answer: Awaited<ReturnType<ModelCall>>;
   try {
-    answer = await call({
-      system: `${buildMasterPrompt(project)}\n${COMMAND_RULES}`,
-      user: `PROJECT JSON\n${describeProject(project)}\n\nOWNER REQUEST\n${input.request.trim()}`,
-    });
+    answer = await call(buildPromptParts(project, input.request));
   } catch (err) {
     return describeError(err);
   }
@@ -114,19 +67,7 @@ export async function runAssist(input: { project: unknown; request: unknown }, c
   if (answer.stopReason === 'max_tokens') return { ok: false, status: 502, error: 'The answer was too long and got cut off. Try a smaller request.' };
   if (!answer.parsed) return { ok: false, status: 502, error: 'The assistant answer could not be read. Please try again.' };
 
-  // Apply each command to a working copy; keep the ones that validate, report the rest.
-  let working = project;
-  const proposals: Proposal[] = answer.parsed.commands.slice(0, MAX_COMMANDS).map((raw) => {
-    const parsed = parseCommand(raw);
-    if (!parsed.ok) return { raw, command: null, ok: false, error: parsed.error };
-    const result = applyCommand(working, parsed.command, ids);
-    if (!result.ok) return { raw, command: null, ok: false, error: result.error };
-    working = result.project;
-    return { raw, command: parsed.command, ok: true };
-  });
-  if (answer.parsed.commands.length > MAX_COMMANDS) {
-    proposals.push({ raw: '', command: null, ok: false, error: `Only the first ${MAX_COMMANDS} commands were considered.` });
-  }
+  const proposals = validateProposals(project, answer.parsed.commands, ids);
   return {
     ok: true,
     summary: answer.parsed.summary,

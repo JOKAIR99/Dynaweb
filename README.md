@@ -77,15 +77,15 @@ Other commands: `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`
 
 ## AI assistant
 
-Open a project, go to the **AI** tab and describe a change in your own words ("make the hero more dramatic, add a section about our process"). Claude proposes edits as Dynaweb commands; each one is validated against the site model before you see it, rejected ones are shown with the reason, and nothing changes until you apply. One Undo reverts the whole change. The assistant never invents facts: it lists what you still need to provide.
+Open a project, go to the **AI** tab and describe a change in your own words ("make the hero more dramatic, add a section about our process"). **No API key is needed:**
 
-Setup (the key stays on the server and never reaches the browser):
+1. Click **Copy prompt for Claude**. Dynaweb writes a complete prompt with your project and request.
+2. Paste it into your own Claude chat (claude.ai or the Claude app) and copy Claude's whole answer.
+3. Paste the answer into Dynaweb and click **Check answer**.
 
-1. Get an API key at https://platform.claude.com.
-2. Copy `.env.example` to `.env.local` and set `ANTHROPIC_API_KEY` (`.env.local` is git-ignored), or set it in your shell, or run `ant auth login`.
-3. Restart `npm run dev`.
+Every proposed change is validated against the site model before you see it; rejected ones are shown with the reason. Untick anything you don't want and click **Apply**: one Undo reverts the whole change. Facts you still need to provide are listed, never invented.
 
-Defaults: model `claude-opus-5-5` at effort `medium` with server-side refusal fallback; change them with `DYNAWEB_AI_MODEL` and `DYNAWEB_AI_EFFORT`. Each request is billed to your Anthropic account. The assistant runs with the dev server today; a hosted endpoint arrives with publishing.
+*Optional:* a developer can instead set `ANTHROPIC_API_KEY` where the dev server runs (see `.env.example`) and use "Ask the server assistant". The key stays on the server and each request is billed to that account. Dynaweb works fully without it.
 
 ## Architecture
 
