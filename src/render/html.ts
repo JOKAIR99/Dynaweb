@@ -85,10 +85,12 @@ function sectionBody(section: Section): string {
       return `<h2>${esc(c.heading)}</h2>${para(c.subheading, 'dw-lead dw-muted')}<div class="dw-grid">${c.items
         .map((i) => `<article class="dw-card">${safeImage(i.imageUrl) ? media(i.imageUrl, i.title) : ''}<h3>${esc(i.title)}</h3>${para(i.text, 'dw-muted')}</article>`).join('')}</div>`;
     case 'gallery': {
-      const horizontal = section.animations.some((a) => a.type === 'horizontal' && a.enabled);
+      const horizontal = section.animations.find((a) => a.type === 'horizontal' && a.enabled);
       const panels = c.items.map((i) => `<div class="dw-h-panel"><figure>${media(i.imageUrl, i.title)}${i.title ? `<figcaption class="dw-muted">${esc(i.title)}</figcaption>` : ''}</figure></div>`).join('');
-      if (!horizontal) return `<h2>${esc(c.heading)}</h2><div class="dw-grid">${panels}</div>`;
-      return `<div class="dw-h-sticky"><div class="dw-inner"><h2>${esc(c.heading)}</h2></div><div class="dw-h-track">${panels}</div><div class="dw-h-progress" aria-hidden="true"><span></span></div><div class="dw-h-dots" aria-hidden="true">${c.items.map(() => '<i></i>').join('')}</div></div>`;
+      if (!horizontal || horizontal.type !== 'horizontal') return `<h2>${esc(c.heading)}</h2><div class="dw-grid">${panels}</div>`;
+      const progress = horizontal.settings.showProgress ? '<div class="dw-h-progress" aria-hidden="true"><span></span></div>' : '';
+      const dots = horizontal.settings.showIndicators ? `<div class="dw-h-dots" aria-hidden="true">${c.items.map(() => '<i></i>').join('')}</div>` : '';
+      return `<div class="dw-h-sticky"><div class="dw-inner"><h2>${esc(c.heading)}</h2></div><div class="dw-h-track">${panels}</div>${progress}${dots}</div>`;
     }
     case 'statistics':
       return `<h2 class="dw-stats-head">${esc(c.heading)}</h2><dl class="dw-grid dw-stats">${c.items
