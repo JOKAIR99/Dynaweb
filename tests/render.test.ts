@@ -41,6 +41,30 @@ describe('renderer', () => {
     expect(render(r.project)).not.toContain('data-dw-parallax');
   });
 
+  it('renders the horizontal gallery progress bar and indicators by default', () => {
+    const html = render(sampleProject());
+    expect(html).toContain('class="dw-h-progress"');
+    expect(html).toContain('class="dw-h-dots"');
+  });
+
+  it('drops the horizontal gallery progress bar and indicators when their settings are off', () => {
+    const p = sampleProject();
+    const page = p.pages[0];
+    const gallery = page.sections.find((s) => s.type === 'gallery');
+    if (!gallery) throw new Error('sample project has no gallery');
+    const animation = gallery.animations.find((a) => a.type === 'horizontal');
+    if (!animation) throw new Error('sample gallery is not horizontal');
+    const r = applyCommand(p, {
+      kind: 'updateAnimation', pageId: page.id, sectionId: gallery.id, animationId: animation.id,
+      settings: { showProgress: false, showIndicators: false },
+    }, createSequentialIds(900));
+    if (!r.ok) throw new Error(r.error);
+    const html = render(r.project);
+    expect(html).toContain('class="dw-h-track"');
+    expect(html).not.toContain('class="dw-h-progress"');
+    expect(html).not.toContain('class="dw-h-dots"');
+  });
+
   it('escapes user text and blocks unsafe urls', () => {
     const p = sampleProject();
     const hero = p.pages[0].sections[1];
