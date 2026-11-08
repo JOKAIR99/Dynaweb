@@ -31,7 +31,7 @@ const isPlaceholder = (text: string) => /^\[.*\]$/.test(text.trim());
 
 function media(url: string, alt: string, attrs = ''): string {
   const src = safeImage(url);
-  if (src) return `<div class="dw-media"${attrs}><img src="${esc(src)}" alt="${esc(alt)}" loading="lazy"></div>`;
+  if (src) return `<div class="dw-media"${attrs}><img src="${esc(src)}" alt="${esc(alt)}" loading="lazy" decoding="async"></div>`;
   return `<div class="dw-media"${attrs} role="img" aria-label="${T().imagePlaceholderLabel}">${T().imagePlaceholder}</div>`;
 }
 

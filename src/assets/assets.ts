@@ -9,9 +9,10 @@ import type { Project } from '../model/schema';
  * exported file stays standalone.
  */
 export const ASSET_PREFIX = 'asset:';
-export const MAX_SIDE = 1920;
+/** 2560 px keeps photos sharp on Retina and 4K screens. */
+export const MAX_SIDE = 2560;
 export const MAX_INPUT_BYTES = 15 * 1024 * 1024;
-export const MAX_STORED_BYTES = 2 * 1024 * 1024;
+export const MAX_STORED_BYTES = 3 * 1024 * 1024;
 export const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'] as const;
 
 export const assetSchema = z.object({
@@ -114,7 +115,7 @@ export async function processImage(file: File, ids: (prefix: string) => string, 
   canvas.height = size.height;
   canvas.getContext('2d')?.drawImage(bitmap, 0, 0, size.width, size.height);
   bitmap.close();
-  for (const quality of [0.85, 0.7, 0.55]) {
+  for (const quality of [0.9, 0.82, 0.7, 0.6]) {
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/webp', quality));
     if (blob && blob.size <= MAX_STORED_BYTES) {
       return { ...base, type: 'image/webp', dataUrl: await readAsDataUrl(blob), width: size.width, height: size.height, bytes: blob.size };

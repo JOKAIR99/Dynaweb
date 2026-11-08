@@ -55,7 +55,7 @@ All three respect `prefers-reduced-motion`, keep content visible without JavaScr
 - **Layout variants:** every section type has several layouts (split, full-bleed or editorial hero, numbered or featured-first lists, masonry or filmstrip galleries, spotlight quotes...). Each preset composes pages differently, and you can switch any section's layout in the Style tab.
 - **Working forms:** contact and booking forms with real-time validation that post to any https form endpoint, and say honestly when no endpoint is connected. Booking requests are never shown as confirmed.
 - **SEO:** Open Graph, canonical URL, JSON-LD from real facts only, sitemap.xml and robots.txt.
-- **Image upload:** an Assets panel to upload JPEG, PNG, WebP or GIF images (resized to 1920 px, stored in your browser, never on a server) and pick them in any image field. Exports embed them; saved project files carry them.
+- **Image upload:** an Assets panel to upload JPEG, PNG, WebP or GIF images (kept sharp up to 2560 px, stored in your browser, never on a server) and pick them in any image field. Exports embed them; saved project files carry them.
 - **Export:** one standalone HTML file with its CSS and the animation runtime inlined. Projects save automatically in the browser and can be saved and opened as `.dynaweb.json` files.
 
 *Planned:* more section types, multi-page sites, an assets panel, ZIP export and publishing. See the [roadmap](ROADMAP.md).
