@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- Image upload: Assets panel (upload, thumbnails, size info, delete with an in-use warning); images resized to at most 1920 px and stored as WebP in the browser (IndexedDB), referenced as `asset:<id>` in the model and embedded in the canvas and exported HTML; saved project files carry the images they use and imports restore them after validation.
+
 - Area starting points in the wizard (15 areas plus "Other"): pre-fill objective, atmosphere, sections, schema.org type and [placeholder] headings; fully editable, nothing stored as a category. Neutral README sample ("Your Company") replaces the boat-tour test project.
 
 - AI assistant (AI tab), no API key needed: Dynaweb writes a prompt for your own Claude chat and checks the pasted answer. Optionally, a server with an API key (claude-opus-5-5, structured output, server-side refusal fallback) can be used instead. Either way, Claude proposes Dynaweb commands that are parsed, shape-checked and applied to a copy of the project before you see them; rejected proposals show the reason; accepted ones apply as one undo step. Missing facts and needed integrations are listed, never invented. Runs server-side through the dev server; the API key is read from the server environment and never reaches the browser bundle.
