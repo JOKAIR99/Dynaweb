@@ -142,6 +142,11 @@ function sectionBody(section: Section): string {
     case 'gallery': {
       const horizontal = section.animations.find((a) => a.type === 'horizontal' && a.enabled);
       const panels = c.items.map((i) => `<div class="dw-h-panel"${E(`item:${i.id}`)}><figure>${media(i.imageUrl, i.title)}${i.title ? `<figcaption class="dw-muted">${esc(i.title)}</figcaption>` : ''}</figure></div>`).join('');
+      if (section.style.variant === 'marquee' && c.items.length) {
+        // A second, hidden copy makes the loop seamless; the first copy carries the content.
+        const copy = c.items.map((i) => `<div class="dw-h-panel"><figure>${media(i.imageUrl, '')}</figure></div>`).join('');
+        return `<h2${E('heading')}>${esc(c.heading)}</h2><div class="dw-marquee"><div class="dw-marquee-track" style="--dw-mq-n:${c.items.length}"><div class="dw-marquee-set">${panels}</div><div class="dw-marquee-set" aria-hidden="true">${copy}</div></div></div>`;
+      }
       if (!horizontal || horizontal.type !== 'horizontal') return `<h2${E('heading')}>${esc(c.heading)}</h2><div class="dw-grid">${panels}</div>`;
       const progress = horizontal.settings.showProgress ? '<div class="dw-h-progress" aria-hidden="true"><span></span></div>' : '';
       const dots = horizontal.settings.showIndicators ? `<div class="dw-h-dots" aria-hidden="true">${c.items.map(() => '<i></i>').join('')}</div>` : '';

@@ -323,3 +323,27 @@ describe('runtime: counters and image zoom', () => {
     expect(img.style.getPropertyValue('--dw-zoom')).toBe('');
   });
 });
+
+describe('render: marquee gallery', () => {
+  it('renders the items once for readers plus a hidden copy for a seamless loop', async () => {
+    const { applyCommand } = await import('../src/model/commands');
+    const { createSequentialIds } = await import('../src/model/ids');
+    const p = sampleProject();
+    const page = p.pages[0];
+    let gallery = page.sections.find((s) => s.type === 'gallery');
+    let project = p;
+    if (!gallery) {
+      const r = applyCommand(p, { kind: 'addSection', pageId: page.id, sectionType: 'gallery' }, createSequentialIds(9700));
+      if (!r.ok) throw new Error(r.error);
+      project = r.project;
+      gallery = project.pages[0].sections.find((s) => s.type === 'gallery')!;
+    }
+    const r = applyCommand(project, { kind: 'updateStyle', pageId: page.id, sectionId: gallery.id, patch: { variant: 'marquee' } }, createSequentialIds(9750));
+    if (!r.ok) throw new Error(r.error);
+    const html = renderPage(r.project, { mode: 'export', runtimeJs: '' });
+    expect(html).toContain('class="dw-marquee"');
+    expect(html.match(/class="dw-marquee-set">/g)?.length).toBe(1);
+    expect(html).toContain('class="dw-marquee-set" aria-hidden="true"');
+    expect(html).toContain('@keyframes dw-marquee');
+  });
+});

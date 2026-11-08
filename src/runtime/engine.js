@@ -304,7 +304,10 @@
     });
   };
 
-  Runtime.prototype.updateParallax = function (vh) {
+  /** Eases a layer toward its target so parallax glides instead of following every wheel tick. */
+  var GLIDE = 0.14;
+  Runtime.prototype.updateParallax = function (vh, smooth) {
+    var self = this;
     var mx = this.mouse.x, my = this.mouse.y;
     this.parallax.forEach(function (p) {
       var r = p.section.getBoundingClientRect();
@@ -317,6 +320,12 @@
         var myOff = p.s.mouseInteraction ? my * 40 * p.s.mouseStrength * layer.speed : 0;
         var x = p.s.direction === 'vertical' ? mxOff : off + mxOff;
         var y = p.s.direction === 'horizontal' ? myOff : off + myOff;
+        if (smooth && layer.cx != null) {
+          x = layer.cx + (x - layer.cx) * GLIDE;
+          y = layer.cy + (y - layer.cy) * GLIDE;
+          if (Math.abs(x - layer.cx) > 0.05 || Math.abs(y - layer.cy) > 0.05) self.gliding = true;
+        }
+        layer.cx = x; layer.cy = y;
         var scale = layer.content ? '' : ' scale(' + p.s.scale + ')';
         layer.el.style.transform = 'translate3d(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px,0)' + scale;
       });
@@ -499,14 +508,17 @@
   Runtime.prototype.schedule = function () {
     if (this.frame || !this.active) return;
     var self = this;
-    this.frame = this.win.requestAnimationFrame(function () { self.frame = 0; self.update(); });
+    this.frame = this.win.requestAnimationFrame(function () { self.frame = 0; self.update(true); });
   };
 
-  Runtime.prototype.update = function () {
+  /** smooth is set for frames driven by scrolling; direct calls snap to the exact position. */
+  Runtime.prototype.update = function (smooth) {
     var vh = this.win.innerHeight;
-    this.updateParallax(vh);
+    this.gliding = false;
+    this.updateParallax(vh, smooth);
     this.updateHorizontal(vh);
     this.updateZoom(vh);
+    if (this.gliding) this.schedule();
   };
 
   Runtime.prototype.destroy = function () {
