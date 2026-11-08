@@ -114,3 +114,8 @@ textarea { resize: vertical; }
 .ed-optional { border-top: 1px solid var(--ui-line); padding-top: 8px; }
 .ed-optional summary { cursor: pointer; color: var(--ui-muted); }
 .ed-panel textarea { width: 100%; }
+.ed-asset-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.ed-asset-grid li { display: grid; gap: 2px; border: 1px solid var(--ui-line); border-radius: 6px; padding: 4px; }
+.ed-asset-grid img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 4px; }
+.ed-asset-name { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ed-asset-grid button { font-size: 11px; padding: 1px 4px; }

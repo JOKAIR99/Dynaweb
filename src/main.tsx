@@ -2,6 +2,7 @@ import { StrictMode, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Project } from './model/schema';
 import { ProjectStore } from './storage/projectStore';
+import { AssetStore, unpackProjectAssets } from './assets/assets';
 import { Editor } from './editor/Editor';
 import { CreateWizard } from './editor/CreateWizard';
 import './styles.css';
@@ -21,7 +22,14 @@ function App() {
   const create = (project: Project) => { store.save(project); setScreen({ kind: 'edit', project }); };
   const importFile = async (file: File) => {
     try {
-      const project = store.parse(await file.text());
+      const text = await file.text();
+      const project = store.parse(text);
+      // Restore the images carried by the file (validated; invalid entries are dropped).
+      const images = unpackProjectAssets(text, project.id);
+      if (images.length && typeof indexedDB !== 'undefined') {
+        const assetStore = new AssetStore();
+        await Promise.all(images.map((a) => assetStore.put(a)));
+      }
       store.save(project);
       setScreen({ kind: 'edit', project });
     } catch (e) {

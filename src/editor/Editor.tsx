@@ -13,6 +13,9 @@ import { ThemePanel } from './panels/ThemePanel';
 import { SitePanel } from './panels/SitePanel';
 import { AssistantPanel } from './panels/AssistantPanel';
 import { download, exportHtml, slugify } from './exportSite';
+import { AssetsPanel } from './panels/AssetsPanel';
+import { AssetStore, packProjectFile, processImage, resolveAssets, usedAssetIds } from '../assets/assets';
+import type { Asset } from '../assets/assets';
 
 const DEVICES = { desktop: 1280, tablet: 820, mobile: 390 } as const;
 const DEVICE_HEIGHTS = { desktop: 800, tablet: 1180, mobile: 844 } as const;
@@ -47,12 +50,42 @@ export function Editor({ initial, store, onClose }: Props) {
     return () => ro.disconnect();
   }, []);
 
+  // Uploaded images of this project (IndexedDB); the canvas and exports use them through resolveAssets().
+  const assetStore = useMemo(() => (typeof indexedDB === 'undefined' ? null : new AssetStore()), []);
+  const assetIds = useMemo(() => createRandomIds(), []);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  useEffect(() => {
+    let alive = true;
+    assetStore?.list(project.id).then((list) => { if (alive) setAssets(list); }).catch(() => {});
+    return () => { alive = false; };
+  }, [assetStore, project.id]);
+  const assetMap = useMemo(() => new Map(assets.map((a) => [a.id, a.dataUrl])), [assets]);
+  const resolved = useMemo(() => resolveAssets(project, assetMap), [project, assetMap]);
+  const usedIds = useMemo(() => usedAssetIds(project), [project]);
+  const uploadImages = async (files: File[]): Promise<string[]> => {
+    const errors: string[] = [];
+    for (const file of files) {
+      try {
+        const asset = await processImage(file, assetIds, project.id);
+        await assetStore?.put(asset);
+        setAssets((list) => [...list, asset]);
+      } catch (err) {
+        errors.push(`${file.name}: ${err instanceof Error ? err.message : 'failed'}`);
+      }
+    }
+    return errors;
+  };
+  const deleteImage = async (id: string) => {
+    await assetStore?.remove(id);
+    setAssets((list) => list.filter((a) => a.id !== id));
+  };
+
   const page = project.pages.find((p) => p.id === pageId) ?? project.pages[0];
   const section = page.sections.find((s) => s.id === selectedId) ?? null;
 
   const html = useMemo(
-    () => renderPage(project, { pageId: page.id, mode: preview ? 'export' : 'editor', selectedId, selectedElement, runtimeJs }),
-    [project, page.id, selectedId, selectedElement, preview],
+    () => renderPage(resolved, { pageId: page.id, mode: preview ? 'export' : 'editor', selectedId, selectedElement, runtimeJs }),
+    [resolved, page.id, selectedId, selectedElement, preview],
   );
 
   // Canvas -> editor: section selection.
@@ -100,7 +133,7 @@ export function Editor({ initial, store, onClose }: Props) {
   const placeholders = countPlaceholders(project);
   const exportSite = () => {
     if (placeholders > 0 && !window.confirm(`${placeholders} placeholder texts are still in [brackets]. Export anyway?`)) return;
-    download(`${slugify(project.name)}.html`, exportHtml(project), 'text/html');
+    download(`${slugify(project.name)}.html`, exportHtml(resolved), 'text/html');
   };
 
   const width = DEVICES[device];
@@ -125,7 +158,7 @@ export function Editor({ initial, store, onClose }: Props) {
           {[0.5, 0.75, 1].map((z) => <option key={z} value={z}>{z * 100}%</option>)}
         </select>
         <button type="button" aria-pressed={preview} onClick={() => setPreview((p) => !p)}>{preview ? 'Edit' : 'Preview'}</button>
-        <button type="button" onClick={() => download(`${slugify(project.name)}.dynaweb.json`, JSON.stringify(project, null, 2), 'application/json')}>Save file</button>
+        <button type="button" onClick={() => download(`${slugify(project.name)}.dynaweb.json`, packProjectFile(project, assets), 'application/json')}>Save file</button>
         <button type="button" className="ed-primary" onClick={exportSite}>Export HTML</button>
         <button type="button" disabled title="Publishing arrives in Phase 6">Publish</button>
       </header>
@@ -159,6 +192,8 @@ export function Editor({ initial, store, onClose }: Props) {
             </li>
           ))}
         </ol>
+        <h2 className="ed-h">Assets</h2>
+        {assetStore ? <AssetsPanel assets={assets} usedIds={usedIds} onUpload={uploadImages} onDelete={deleteImage} /> : <p className="ed-hint">Image storage is not available in this browser.</p>}
         <h2 className="ed-h">Add section</h2>
         <div className="ed-library">
           {SECTION_TYPES.map((t) => <button key={t} type="button" onClick={() => addSection(t)}>{SECTION_LABELS[t]}</button>)}
@@ -191,7 +226,7 @@ export function Editor({ initial, store, onClose }: Props) {
           {tab === 'site' && <SitePanel project={project} dispatch={dispatch} />}
           {tab === 'ai' && <AssistantPanel project={project} applyMany={applyMany} />}
           {tab !== 'theme' && tab !== 'site' && tab !== 'ai' && !section && <p className="ed-empty">Select a section on the canvas or in the list.</p>}
-          {tab === 'content' && section && <ContentPanel pageId={page.id} section={section} dispatch={dispatch} />}
+          {tab === 'content' && section && <ContentPanel pageId={page.id} section={section} dispatch={dispatch} assets={assets} />}
           {tab === 'style' && section && <StylePanel pageId={page.id} section={section} dispatch={dispatch} />}
           {tab === 'animation' && section && (
             <AnimationPanel pageId={page.id} section={section} element={selectedElement} onClearElement={() => setSelectedElement(null)} dispatch={dispatch} onReplay={() => setReplayKey((k) => k + 1)} newLayerId={() => layerIds('layer')} />

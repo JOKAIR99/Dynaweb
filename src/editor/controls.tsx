@@ -71,3 +71,25 @@ export function ColorInput({ label, value, onChange }: { label: string; value: s
     </Field>
   );
 }
+
+interface ImageFieldProps {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  /** Uploaded images of this project: picking one stores an `asset:<id>` reference. */
+  assets: { id: string; name: string }[];
+}
+
+/** An image field: an https link, or one of the images uploaded in the Assets panel. */
+export function ImageField({ label, value, onChange, assets }: ImageFieldProps) {
+  const picked = value.startsWith('asset:') ? value : '';
+  return (
+    <Field label={label}>
+      <select aria-label={`${label}: uploaded image`} value={picked} onChange={(e) => onChange(e.target.value)}>
+        <option value="">{assets.length ? 'Uploaded image: none (use a link)' : 'No uploaded images yet (Assets panel)'}</option>
+        {assets.map((a) => <option key={a.id} value={`asset:${a.id}`}>{a.name}</option>)}
+      </select>
+      {!picked && <input type="text" aria-label={`${label}: link`} value={value} placeholder="https://..." onChange={(e) => onChange(e.target.value)} />}
+    </Field>
+  );
+}
