@@ -13,6 +13,8 @@ export interface GenerateInput {
   motionIntensity: 0 | 1 | 2;
   /** The owner's own structure. When given it replaces the planner's suggestion entirely. */
   sections?: SectionType[];
+  /** Placeholder headings from an optional area starting point, by section type. */
+  headings?: Partial<Record<SectionType, string>>;
 }
 
 /**
@@ -151,6 +153,8 @@ export function generateProject(input: GenerateInput, ids: IdGenerator, now: str
         section = withContent(section, { heading: name, body: meta.location ? `${meta.location}. ${ph('Contact details')}` : section.content.body });
         break;
     }
+    const areaHeading = input.headings?.[type];
+    if (areaHeading) section = withContent(section, { heading: areaHeading });
     const variant = PRESET_LAYOUTS[input.presetId]?.[type] ?? 'standard';
     return { ...section, style: { ...section.style, variant }, animations: animationsFor(type, meta, input.motionIntensity, ids) };
   });
