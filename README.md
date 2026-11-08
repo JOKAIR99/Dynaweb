@@ -56,7 +56,7 @@ All three respect `prefers-reduced-motion`, keep content visible without JavaScr
 - **SEO:** Open Graph, canonical URL, JSON-LD from real facts only, sitemap.xml and robots.txt.
 - **Export:** one standalone HTML file with its CSS and the animation runtime inlined. Projects save automatically in the browser and can be saved and opened as `.dynaweb.json` files.
 
-*Planned:* the built-in AI design assistant (today: "Copy AI prompt" in the Site tab), more section types, multi-page sites, an assets panel, ZIP export and publishing. See the [roadmap](ROADMAP.md).
+*Planned:* more section types, multi-page sites, an assets panel, ZIP export and publishing. See the [roadmap](ROADMAP.md).
 
 ## Quick start
 
@@ -74,6 +74,18 @@ Open http://localhost:5173, click **New website**, and try this brief:
 > Premium private boat tours in Thailand. Cinematic hero, parallax backgrounds, scroll-revealed content and an immersive horizontal gallery.
 
 Other commands: `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`, `npm run check` (everything CI runs), `npm run sample` (renders a sample site to `dist/sample.html`).
+
+## AI assistant
+
+Open a project, go to the **AI** tab and describe a change in your own words ("make the hero more dramatic, add a section about our process"). **No API key is needed:**
+
+1. Click **Copy prompt for Claude**. Dynaweb writes a complete prompt with your project and request.
+2. Paste it into your own Claude chat (claude.ai or the Claude app) and copy Claude's whole answer.
+3. Paste the answer into Dynaweb and click **Check answer**.
+
+Every proposed change is validated against the site model before you see it; rejected ones are shown with the reason. Untick anything you don't want and click **Apply**: one Undo reverts the whole change. Facts you still need to provide are listed, never invented.
+
+*Optional:* a developer can instead set `ANTHROPIC_API_KEY` where the dev server runs (see `.env.example`) and use "Ask the server assistant". The key stays on the server and each request is billed to that account. Dynaweb works fully without it.
 
 ## Architecture
 
