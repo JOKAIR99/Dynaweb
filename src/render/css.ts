@@ -197,6 +197,16 @@ html.dw-js .dw-h-active .dw-h-dots { display: flex; gap: 0.5rem; position: absol
 .dw-form-status { margin: 0; font-weight: 600; min-height: 1.2em; }
 .dw-form button[disabled] { opacity: 0.6; cursor: progress; }
 .dw-hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+/* Cinematic hero intro (runtime adds .dw-intro, then .dw-in) */
+html.dw-js .dw-intro h1 .dw-w { display: inline-block; opacity: 0; transform: translateY(0.55em) rotate(2deg); filter: blur(6px); transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1), transform 900ms cubic-bezier(0.16, 1, 0.3, 1), filter 700ms ease-out; transition-delay: calc(120ms + var(--dw-wi, 0) * 75ms); }
+html.dw-js .dw-intro.dw-in h1 .dw-w { opacity: 1; transform: none; filter: none; }
+html.dw-js .dw-intro .dw-lead, html.dw-js .dw-intro .dw-actions { opacity: 0; transform: translateY(18px); transition: opacity 800ms ease-out, transform 900ms cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(350ms + var(--dw-wn, 4) * 75ms); }
+html.dw-js .dw-intro .dw-actions { transition-delay: calc(500ms + var(--dw-wn, 4) * 75ms); }
+html.dw-js .dw-intro.dw-in .dw-lead, html.dw-js .dw-intro.dw-in .dw-actions { opacity: 1; transform: none; }
+html.dw-js .dw-intro .dw-hero-bg, html.dw-js .dw-intro .dw-media img { transform: scale(1.14); transform-origin: 60% 40%; transition: transform 9s cubic-bezier(0.22, 1, 0.36, 1); }
+html.dw-js .dw-intro.dw-in .dw-hero-bg, html.dw-js .dw-intro.dw-in .dw-media img { transform: scale(1); }
+.dw-hero .dw-media { overflow: hidden; }
+
 /* Micro-interactions */
 .dw-hover .dw-card { transition: transform 220ms ease-out, opacity 220ms ease-out; }
 .dw-hover .dw-card:hover { transform: translateY(-4px); }
@@ -207,6 +217,7 @@ html.dw-js .dw-h-active .dw-h-dots { display: flex; gap: 0.5rem; position: absol
 @media (prefers-reduced-motion: reduce) {
   .dw-rv { transition: none !important; opacity: 1 !important; transform: none !important; filter: none !important; clip-path: none !important; }
   .dw-plx-layer { transform: none !important; }
+  .dw-intro h1 .dw-w, .dw-intro .dw-lead, .dw-intro .dw-actions, .dw-intro .dw-hero-bg, .dw-intro .dw-media img { transition: none !important; opacity: 1 !important; transform: none !important; filter: none !important; }
   .dw-btn { transition: none; }
   .dw-hover .dw-card, .dw-hover .dw-card:hover, .dw-btn.dw-magnet { transition: none; transform: none !important; }
 }

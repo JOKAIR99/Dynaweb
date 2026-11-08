@@ -261,3 +261,36 @@ describe('runtime: form messages follow the page language', () => {
     expect(en.doc.getElementById(`${enName.id}-err`)!.textContent).toBe('Please fill in this field.');
   });
 });
+
+describe('runtime: cinematic hero intro', () => {
+  const HERO = '<!doctype html><html><body><section class="dw-section dw-hero"><h1>Fresh bread every morning</h1><p class="dw-lead">Since 1990</p><div class="dw-actions"><a class="dw-btn" href="#">Visit</a></div></section></body></html>';
+
+  it('splits the headline into words, keeps it readable and plays once', async () => {
+    const { doc, runtime, win } = setup({ html: HERO });
+    runtime.init();
+    const hero = section(doc, 'hero');
+    const h1 = hero.querySelector('h1')!;
+    expect(hero.classList.contains('dw-intro')).toBe(true);
+    expect(h1.querySelectorAll('.dw-w').length).toBe(4);
+    expect(h1.getAttribute('aria-label')).toBe('Fresh bread every morning');
+    expect((h1.querySelectorAll('.dw-w')[2] as HTMLElement).style.getPropertyValue('--dw-wi')).toBe('2');
+    await new Promise((r) => win.setTimeout(r, 80));
+    expect(hero.classList.contains('dw-in')).toBe(true);
+  });
+
+  it('restores the original headline on destroy', () => {
+    const { doc, runtime } = setup({ html: HERO });
+    runtime.init();
+    runtime.destroy();
+    const h1 = section(doc, 'hero').querySelector('h1')!;
+    expect(h1.innerHTML).toBe('Fresh bread every morning');
+    expect(h1.hasAttribute('aria-label')).toBe(false);
+    expect(section(doc, 'hero').classList.contains('dw-intro')).toBe(false);
+  });
+
+  it('does nothing under reduced motion', () => {
+    const { doc, runtime } = setup({ html: HERO, reducedMotion: true });
+    runtime.init();
+    expect(section(doc, 'hero').querySelector('.dw-w')).toBeNull();
+  });
+});
