@@ -76,6 +76,11 @@
     };
   }
 
+  /** Theme "Motion level": Subtle halves distances and zooms, Expressive keeps them full. */
+  Runtime.prototype.intensity = function () {
+    return this.doc.body && this.doc.body.getAttribute('data-dw-motion') === 'subtle' ? 0.5 : 1;
+  };
+
   Runtime.prototype.reducedMotion = function () {
     var mq = this.win.matchMedia && this.win.matchMedia('(prefers-reduced-motion: reduce)');
     return !!(mq && mq.matches) || (this.doc.body && this.doc.body.getAttribute('data-dw-motion') === 'none');
@@ -225,10 +230,11 @@
     });
   };
   Runtime.prototype.updateZoom = function (vh) {
+    var extra = 0.12 * this.intensity();
     this.zooms.forEach(function (img) {
       var r = img.parentNode.getBoundingClientRect();
       var p = clamp((vh - r.top) / (vh + r.height), 0, 1);
-      img.style.setProperty('--dw-zoom', (1.12 - 0.12 * clamp(p * 1.6, 0, 1)).toFixed(4));
+      img.style.setProperty('--dw-zoom', (1 + extra - extra * clamp(p * 1.6, 0, 1)).toFixed(4));
     });
   };
 
@@ -313,7 +319,7 @@
       var r = p.section.getBoundingClientRect();
       if (r.bottom < -vh * 0.25 || r.top > vh * 1.25) return; // off screen: skip work
       var progress = (r.top + r.height / 2 - vh / 2) / vh; // 0 when centred
-      var amp = vh * 0.5 * (0.5 + p.s.depth);
+      var amp = vh * 0.5 * (0.5 + p.s.depth) * self.intensity();
       p.layers.forEach(function (layer) {
         var off = -progress * amp * layer.speed;
         var mxOff = p.s.mouseInteraction ? mx * 40 * p.s.mouseStrength * layer.speed : 0;

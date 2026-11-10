@@ -29,9 +29,11 @@ export function safeImage(url: string): string | null {
 
 const isPlaceholder = (text: string) => /^\[.*\]$/.test(text.trim());
 
-function media(url: string, alt: string, attrs = ''): string {
+function media(url: string, alt: string, attrs = '', priority = false): string {
   const src = safeImage(url);
-  if (src) return `<div class="dw-media"${attrs}><img src="${esc(src)}" alt="${esc(alt)}" loading="lazy" decoding="async"></div>`;
+  // The hero image is the first thing seen: load it right away instead of lazily.
+  const load = priority ? 'fetchpriority="high"' : 'loading="lazy" decoding="async"';
+  if (src) return `<div class="dw-media"${attrs}><img src="${esc(src)}" alt="${esc(alt)}" ${load}></div>`;
   return `<div class="dw-media"${attrs} role="img" aria-label="${T().imagePlaceholderLabel}">${T().imagePlaceholder}</div>`;
 }
 
@@ -123,7 +125,7 @@ function sectionBody(section: Section): string {
     case 'hero': {
       const text = `<h1${E('heading')}>${esc(c.heading)}</h1>${para(c.subheading, 'dw-lead dw-muted', E('subheading'))}${actions(section, E)}`;
       const v = section.style.variant;
-      if (v === 'split') return `<div class="dw-hero-text">${text}</div>${media(c.imageUrl, c.heading, E('image'))}`;
+      if (v === 'split') return `<div class="dw-hero-text">${text}</div>${media(c.imageUrl, c.heading, E('image'), true)}`;
       if (v === 'fullbleed') {
         // With parallax on, the parallax layer already shows the image.
         const parallax = section.animations.some((a) => a.type === 'parallax' && a.enabled);
