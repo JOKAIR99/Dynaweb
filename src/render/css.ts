@@ -220,6 +220,15 @@ html.dw-js .dw-intro.dw-in .dw-hero-bg, html.dw-js .dw-intro.dw-in .dw-media img
 .dw-marquee .dw-h-panel { flex: 0 0 clamp(14rem, 28vw, 24rem); }
 @keyframes dw-marquee { to { transform: translateX(-50%); } }
 
+/* Motion level "subtle": shorter distances, no blur, gentler zoom, slower marquee */
+html.dw-js [data-dw-motion="subtle"] .dw-intro h1 .dw-w { transform: translateY(0.25em); filter: none; }
+html.dw-js [data-dw-motion="subtle"] .dw-intro .dw-lead, html.dw-js [data-dw-motion="subtle"] .dw-intro .dw-actions { transform: translateY(8px); }
+html.dw-js [data-dw-motion="subtle"] .dw-intro .dw-hero-bg, html.dw-js [data-dw-motion="subtle"] .dw-intro .dw-media img { transform: scale(1.05); }
+html.dw-js [data-dw-motion="subtle"] .dw-intro.dw-in h1 .dw-w, html.dw-js [data-dw-motion="subtle"] .dw-intro.dw-in .dw-lead, html.dw-js [data-dw-motion="subtle"] .dw-intro.dw-in .dw-actions,
+html.dw-js [data-dw-motion="subtle"] .dw-intro.dw-in .dw-hero-bg, html.dw-js [data-dw-motion="subtle"] .dw-intro.dw-in .dw-media img { transform: none; }
+[data-dw-motion="subtle"] .dw-marquee-track { animation-duration: calc(var(--dw-mq-n, 4) * 10s); }
+[data-dw-motion="none"] .dw-marquee-track { animation: none; }
+
 /* Micro-interactions */
 .dw-hover .dw-card { transition: transform 220ms ease-out, opacity 220ms ease-out; }
 .dw-hover .dw-card:hover { transform: translateY(-4px); }

@@ -347,3 +347,38 @@ describe('render: marquee gallery', () => {
     expect(html).toContain('@keyframes dw-marquee');
   });
 });
+
+describe('runtime: motion level', () => {
+  const PAGE = (level: string) => `<!doctype html><html><body data-dw-motion="${level}"><section class="dw-section dw-about"><div class="dw-media"><img src="data:image/png;base64,AA==" alt=""></div></section></body></html>`;
+
+  it('zooms less with the Subtle motion level than with Expressive', () => {
+    const subtle = setup({ html: PAGE('subtle') });
+    subtle.runtime.init();
+    const expressive = setup({ html: PAGE('expressive') });
+    expressive.runtime.init();
+    const zoom = (doc: Document) => Number((doc.querySelector('img') as HTMLElement).style.getPropertyValue('--dw-zoom'));
+    expect(zoom(subtle.doc) - 1).toBeCloseTo((zoom(expressive.doc) - 1) / 2, 3);
+  });
+
+  it('turns everything off with the None motion level', () => {
+    const { doc, runtime } = setup({ html: PAGE('none') });
+    runtime.init();
+    expect(doc.querySelector('.dw-zoom')).toBeNull();
+  });
+});
+
+describe('render: hero image priority', () => {
+  it('loads the split hero image right away and other images lazily', async () => {
+    const { applyCommand } = await import('../src/model/commands');
+    const { createSequentialIds } = await import('../src/model/ids');
+    const p = sampleProject();
+    const hero = p.pages[0].sections.find((s) => s.type === 'hero')!;
+    const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+    let r = applyCommand(p, { kind: 'updateStyle', pageId: p.pages[0].id, sectionId: hero.id, patch: { variant: 'split' } }, createSequentialIds(9800));
+    if (!r.ok) throw new Error(r.error);
+    r = applyCommand(r.project, { kind: 'updateContent', pageId: p.pages[0].id, sectionId: hero.id, patch: { imageUrl: PNG } }, createSequentialIds(9810));
+    if (!r.ok) throw new Error(r.error);
+    const html = renderPage(r.project, { mode: 'export', runtimeJs: '' });
+    expect(html).toMatch(/<img src="data:image\/png[^"]*" alt="[^"]*" fetchpriority="high">/);
+  });
+});
